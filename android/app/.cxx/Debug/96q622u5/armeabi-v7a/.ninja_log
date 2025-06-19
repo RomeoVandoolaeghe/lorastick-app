@@ -1,25 +1,24 @@
 # ninja log v5
-4	1916	1750293590066223245	RNVectorIconsSpec_autolinked_build/CMakeFiles/react_codegen_RNVectorIconsSpec.dir/react/renderer/components/RNVectorIconsSpec/ComponentDescriptors.cpp.o	51c31a40081b9a0a
-5	1249	1750293589398383433	RNVectorIconsSpec_autolinked_build/CMakeFiles/react_codegen_RNVectorIconsSpec.dir/react/renderer/components/RNVectorIconsSpec/States.cpp.o	a96502dac39e2cb8
-4	1764	1750293589911342026	RNVectorIconsSpec_autolinked_build/CMakeFiles/react_codegen_RNVectorIconsSpec.dir/RNVectorIconsSpec-generated.cpp.o	781b7b876be72be3
-4	1774	1750293589924111218	RNVectorIconsSpec_autolinked_build/CMakeFiles/react_codegen_RNVectorIconsSpec.dir/react/renderer/components/RNVectorIconsSpec/ShadowNodes.cpp.o	639750a1218416a3
-5	1708	1750293589856473513	RNVectorIconsSpec_autolinked_build/CMakeFiles/react_codegen_RNVectorIconsSpec.dir/react/renderer/components/RNVectorIconsSpec/RNVectorIconsSpecJSI-generated.cpp.o	76c704b24a6f2396
-32	564	1750298105849620945	build.ninja	f3f8430ef399fee2
-0	6	0	clean	eb0565a456784b9d
-4	1672	1750293589821691599	RNVectorIconsSpec_autolinked_build/CMakeFiles/react_codegen_RNVectorIconsSpec.dir/react/renderer/components/RNVectorIconsSpec/Props.cpp.o	6a462b825e7d7378
-4	1458	1750293589608881330	RNVectorIconsSpec_autolinked_build/CMakeFiles/react_codegen_RNVectorIconsSpec.dir/react/renderer/components/RNVectorIconsSpec/EventEmitters.cpp.o	de705e9692f85244
-4	1953	1750293590101614700	CMakeFiles/appmodules.dir/OnLoad.cpp.o	5a20dc49405a2d25
-3	1815	1750293589965101916	CMakeFiles/appmodules.dir/Users/eszymko/Documents_local/SoftDev/lorastick/android/app/build/generated/autolinking/src/main/jni/autolinking.cpp.o	f762cbe49672be23
-1954	2016	1750293590167402449	/Users/eszymko/Documents local/SoftDev/lorastick/android/app/build/intermediates/cxx/Debug/96q622u5/obj/armeabi-v7a/libappmodules.so	f2272ffd9f989f7f
-1	10	0	/Users/eszymko/Documents local/SoftDev/lorastick/android/app/.cxx/Debug/96q622u5/armeabi-v7a/CMakeFiles/cmake.verify_globs	7c8285c1fc53c2e2
-0	9	0	/Users/eszymko/Documents local/SoftDev/lorastick/android/app/.cxx/Debug/96q622u5/armeabi-v7a/CMakeFiles/cmake.verify_globs	7c8285c1fc53c2e2
-7	1091	1750298106968632156	RNVectorIconsSpec_autolinked_build/CMakeFiles/react_codegen_RNVectorIconsSpec.dir/react/renderer/components/RNVectorIconsSpec/States.cpp.o	a96502dac39e2cb8
-7	1255	1750298107133824219	RNVectorIconsSpec_autolinked_build/CMakeFiles/react_codegen_RNVectorIconsSpec.dir/react/renderer/components/RNVectorIconsSpec/EventEmitters.cpp.o	de705e9692f85244
-7	1547	1750298107422023015	RNVectorIconsSpec_autolinked_build/CMakeFiles/react_codegen_RNVectorIconsSpec.dir/react/renderer/components/RNVectorIconsSpec/RNVectorIconsSpecJSI-generated.cpp.o	76c704b24a6f2396
-7	1549	1750298107427432906	RNVectorIconsSpec_autolinked_build/CMakeFiles/react_codegen_RNVectorIconsSpec.dir/react/renderer/components/RNVectorIconsSpec/Props.cpp.o	6a462b825e7d7378
-6	1596	1750298107471479659	RNVectorIconsSpec_autolinked_build/CMakeFiles/react_codegen_RNVectorIconsSpec.dir/RNVectorIconsSpec-generated.cpp.o	781b7b876be72be3
-6	1639	1750298107517782752	CMakeFiles/appmodules.dir/Users/eszymko/Documents_local/SoftDev/lorastick/android/app/build/generated/autolinking/src/main/jni/autolinking.cpp.o	f762cbe49672be23
-7	1673	1750298107552492853	RNVectorIconsSpec_autolinked_build/CMakeFiles/react_codegen_RNVectorIconsSpec.dir/react/renderer/components/RNVectorIconsSpec/ShadowNodes.cpp.o	639750a1218416a3
 7	1732	1750298107609921270	RNVectorIconsSpec_autolinked_build/CMakeFiles/react_codegen_RNVectorIconsSpec.dir/react/renderer/components/RNVectorIconsSpec/ComponentDescriptors.cpp.o	51c31a40081b9a0a
-6	1853	1750298107729974869	CMakeFiles/appmodules.dir/OnLoad.cpp.o	5a20dc49405a2d25
-1853	1915	1750298107794538265	/Users/eszymko/Documents local/SoftDev/lorastick/android/app/build/intermediates/cxx/Debug/96q622u5/obj/armeabi-v7a/libappmodules.so	f2272ffd9f989f7f
+7	1091	1750298106968632156	RNVectorIconsSpec_autolinked_build/CMakeFiles/react_codegen_RNVectorIconsSpec.dir/react/renderer/components/RNVectorIconsSpec/States.cpp.o	a96502dac39e2cb8
+6	1596	1750298107471479659	RNVectorIconsSpec_autolinked_build/CMakeFiles/react_codegen_RNVectorIconsSpec.dir/RNVectorIconsSpec-generated.cpp.o	781b7b876be72be3
+7	1673	1750298107552492853	RNVectorIconsSpec_autolinked_build/CMakeFiles/react_codegen_RNVectorIconsSpec.dir/react/renderer/components/RNVectorIconsSpec/ShadowNodes.cpp.o	639750a1218416a3
+7	1547	1750298107422023015	RNVectorIconsSpec_autolinked_build/CMakeFiles/react_codegen_RNVectorIconsSpec.dir/react/renderer/components/RNVectorIconsSpec/RNVectorIconsSpecJSI-generated.cpp.o	76c704b24a6f2396
+0	6	0	clean	eb0565a456784b9d
+11	160	1750336341394867569	build.ninja	f3f8430ef399fee2
+7	1549	1750298107427432906	RNVectorIconsSpec_autolinked_build/CMakeFiles/react_codegen_RNVectorIconsSpec.dir/react/renderer/components/RNVectorIconsSpec/Props.cpp.o	6a462b825e7d7378
+1409	1479	1750336303293617341	/Users/eszymko/Documents local/SoftDev/lorastick/android/app/build/intermediates/cxx/Debug/96q622u5/obj/armeabi-v7a/libappmodules.so	f2272ffd9f989f7f
+5	1275	1750336303088271888	CMakeFiles/appmodules.dir/Users/eszymko/Documents_local/SoftDev/lorastick/android/app/build/generated/autolinking/src/main/jni/autolinking.cpp.o	f762cbe49672be23
+4	1409	1750336303219713189	CMakeFiles/appmodules.dir/OnLoad.cpp.o	5a20dc49405a2d25
+7	1255	1750298107133824219	RNVectorIconsSpec_autolinked_build/CMakeFiles/react_codegen_RNVectorIconsSpec.dir/react/renderer/components/RNVectorIconsSpec/EventEmitters.cpp.o	de705e9692f85244
+0	9	0	/Users/eszymko/Documents local/SoftDev/lorastick/android/app/.cxx/Debug/96q622u5/armeabi-v7a/CMakeFiles/cmake.verify_globs	7c8285c1fc53c2e2
+0	9	0	/Users/eszymko/Documents local/SoftDev/lorastick/android/app/.cxx/Debug/96q622u5/armeabi-v7a/CMakeFiles/cmake.verify_globs	7c8285c1fc53c2e2
+0	15	0	/Users/eszymko/Documents local/SoftDev/lorastick/android/app/.cxx/Debug/96q622u5/armeabi-v7a/CMakeFiles/cmake.verify_globs	7c8285c1fc53c2e2
+0	10	0	/Users/eszymko/Documents local/SoftDev/lorastick/android/app/.cxx/Debug/96q622u5/armeabi-v7a/CMakeFiles/cmake.verify_globs	7c8285c1fc53c2e2
+0	9	0	/Users/eszymko/Documents local/SoftDev/lorastick/android/app/.cxx/Debug/96q622u5/armeabi-v7a/CMakeFiles/cmake.verify_globs	7c8285c1fc53c2e2
+0	12	0	/Users/eszymko/Documents local/SoftDev/lorastick/android/app/.cxx/Debug/96q622u5/armeabi-v7a/CMakeFiles/cmake.verify_globs	7c8285c1fc53c2e2
+1	11	0	/Users/eszymko/Documents local/SoftDev/lorastick/android/app/.cxx/Debug/96q622u5/armeabi-v7a/CMakeFiles/cmake.verify_globs	7c8285c1fc53c2e2
+1	11	0	/Users/eszymko/Documents local/SoftDev/lorastick/android/app/.cxx/Debug/96q622u5/armeabi-v7a/CMakeFiles/cmake.verify_globs	7c8285c1fc53c2e2
+0	13	0	/Users/eszymko/Documents local/SoftDev/lorastick/android/app/.cxx/Debug/96q622u5/armeabi-v7a/CMakeFiles/cmake.verify_globs	7c8285c1fc53c2e2
+1	10	0	/Users/eszymko/Documents local/SoftDev/lorastick/android/app/.cxx/Debug/96q622u5/armeabi-v7a/CMakeFiles/cmake.verify_globs	7c8285c1fc53c2e2
+1	11	0	/Users/eszymko/Documents local/SoftDev/lorastick/android/app/.cxx/Debug/96q622u5/armeabi-v7a/CMakeFiles/cmake.verify_globs	7c8285c1fc53c2e2

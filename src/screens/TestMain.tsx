@@ -17,10 +17,21 @@ type TestMethod = typeof testMethods[number]['key'];
 const periods = ['1h', '4h', '24h'] as const;
 type Period = typeof periods[number];
 
+const frequencies = [
+  { key: '10s', label: '10s', value: 10 },
+  { key: '30s', label: '30s', value: 30 },
+  { key: '1min', label: '1min', value: 60 },
+] as const;
+type Frequency = typeof frequencies[number]['key'];
+
+const periodSeconds: Record<Period, number> = { '1h': 3600, '4h': 14400, '24h': 86400 };
+const frequencySeconds: Record<Frequency, number> = { '10s': 10, '30s': 30, '1min': 60 };
+
 const TestMain: React.FC<TestMainProps> = () => {
   const [selectedMethod, setSelectedMethod] = useState<TestMethod | null>(null);
   const [isPeriodic, setIsPeriodic] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<Period>('1h');
+  const [selectedFrequency, setSelectedFrequency] = useState<Frequency>('10s');
 
   return (
     <View style={styles.container}>
@@ -73,28 +84,58 @@ const TestMain: React.FC<TestMainProps> = () => {
               </TouchableOpacity>
             </View>
             {isPeriodic && (
-              <View style={styles.periodRow}>
-                {periods.map((period) => (
-                  <TouchableOpacity
-                    key={period}
-                    style={[
-                      styles.periodButton,
-                      selectedPeriod === period && styles.periodButtonSelected,
-                    ]}
-                    onPress={() => setSelectedPeriod(period)}
-                    activeOpacity={0.85}
-                  >
-                    <Text
+              <>
+                <View style={styles.frequencyRow}>
+                  {frequencies.map((freq) => (
+                    <TouchableOpacity
+                      key={freq.key}
                       style={[
-                        styles.periodButtonText,
-                        selectedPeriod === period && styles.periodButtonTextSelected,
+                        styles.frequencyButton,
+                        selectedFrequency === freq.key && styles.frequencyButtonSelected,
                       ]}
+                      onPress={() => setSelectedFrequency(freq.key)}
+                      activeOpacity={0.85}
                     >
-                      {period}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+                      <Text
+                        style={[
+                          styles.frequencyButtonText,
+                          selectedFrequency === freq.key && styles.frequencyButtonTextSelected,
+                        ]}
+                      >
+                        {freq.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <View style={styles.periodRow}>
+                  {periods.map((period) => (
+                    <TouchableOpacity
+                      key={period}
+                      style={[
+                        styles.periodButton,
+                        selectedPeriod === period && styles.periodButtonSelected,
+                      ]}
+                      onPress={() => setSelectedPeriod(period)}
+                      activeOpacity={0.85}
+                    >
+                      <Text
+                        style={[
+                          styles.periodButtonText,
+                          selectedPeriod === period && styles.periodButtonTextSelected,
+                        ]}
+                      >
+                        {period}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <Text style={styles.testCountText}>
+                  {(() => {
+                    const numTests = Math.floor(periodSeconds[selectedPeriod] / frequencySeconds[selectedFrequency]);
+                    return `Total tests: ${numTests}`;
+                  })()}
+                </Text>
+              </>
             )}
           </View>
           <TouchableOpacity style={styles.runButton} onPress={() => {/* TODO: Implement run test */}} activeOpacity={0.85}>
@@ -205,6 +246,32 @@ const styles = StyleSheet.create({
   bigSwitchTextActive: {
     color: '#fff',
   },
+  frequencyRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  frequencyButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 22,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+    marginHorizontal: 8,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  frequencyButtonSelected: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  frequencyButtonText: {
+    color: '#007AFF',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  frequencyButtonTextSelected: {
+    color: '#fff',
+  },
   periodRow: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -230,6 +297,13 @@ const styles = StyleSheet.create({
   },
   periodButtonTextSelected: {
     color: '#fff',
+  },
+  testCountText: {
+    marginTop: 8,
+    fontSize: 16,
+    color: '#007AFF',
+    fontWeight: '600',
+    textAlign: 'center',
   },
   runButton: {
     backgroundColor: '#007AFF',
