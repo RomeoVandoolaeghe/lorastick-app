@@ -1,0 +1,4 @@
+/Users/eszymko/Documents local/SoftDev/lorastick/android/app/.cxx/Debug/96q622u5/x86/CMakeFiles/_CMakeLTOTest-CXX/bin/CMakeFiles/foo.dir
+/Users/eszymko/Documents local/SoftDev/lorastick/android/app/.cxx/Debug/96q622u5/x86/CMakeFiles/_CMakeLTOTest-CXX/bin/CMakeFiles/boo.dir
+/Users/eszymko/Documents local/SoftDev/lorastick/android/app/.cxx/Debug/96q622u5/x86/CMakeFiles/_CMakeLTOTest-CXX/bin/CMakeFiles/edit_cache.dir
+/Users/eszymko/Documents local/SoftDev/lorastick/android/app/.cxx/Debug/96q622u5/x86/CMakeFiles/_CMakeLTOTest-CXX/bin/CMakeFiles/rebuild_cache.dir

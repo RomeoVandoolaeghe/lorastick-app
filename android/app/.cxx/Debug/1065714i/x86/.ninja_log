@@ -1,0 +1,5 @@
+# ninja log v5
+1	10	0	/Users/eszymko/Documents local/SoftDev/lorastick/lorastick/android/app/.cxx/Debug/1065714i/x86/CMakeFiles/cmake.verify_globs	864df0407bc1762a
+0	1513	1750285068319857837	CMakeFiles/appmodules.dir/Users/eszymko/Documents_local/SoftDev/lorastick/lorastick/android/app/build/generated/autolinking/src/main/jni/autolinking.cpp.o	427853967627c734
+0	1717	1750285068521666509	CMakeFiles/appmodules.dir/OnLoad.cpp.o	55ba6f5bce432080
+1717	1777	1750285068588797661	/Users/eszymko/Documents local/SoftDev/lorastick/lorastick/android/app/build/intermediates/cxx/Debug/1065714i/obj/x86/libappmodules.so	9066adeb68aef879
