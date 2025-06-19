@@ -10,7 +10,7 @@ export function HomePage({ onBack }: { onBack: () => void }) {
 
   let Content;
   if (selectedTab === 'device') {
-    Content = <DeviceMain selected={selectedTab} onTabChange={setSelectedTab} />;
+    Content = <DeviceMain selected={selectedTab} onTabChange={setSelectedTab} onDisconnect={onBack} />;
   } else if (selectedTab === 'tests') {
     Content = <TestMain selected={selectedTab} onTabChange={setSelectedTab} />;
   } else {

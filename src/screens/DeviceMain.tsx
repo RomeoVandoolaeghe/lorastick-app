@@ -5,6 +5,7 @@ import { MenuTab } from '../common/BottomMenu';
 interface DeviceMainProps {
   selected: MenuTab;
   onTabChange: (tab: MenuTab) => void;
+  onDisconnect?: () => void;
 }
 
 const defaultDeviceInfo = {
@@ -19,7 +20,7 @@ const defaultDeviceInfo = {
   txPower: '14 dBm',
 };
 
-const DeviceMain: React.FC<DeviceMainProps> = () => {
+const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDisconnect }) => {
   const [adr, setAdr] = useState(defaultDeviceInfo.adr);
   const [adrChanged, setAdrChanged] = useState(false);
 
@@ -33,17 +34,35 @@ const DeviceMain: React.FC<DeviceMainProps> = () => {
     // Example: sendConfigToLoRaStick({ ... })
   };
 
+  const handleDisconnect = () => {
+    if (onDisconnect) {
+      onDisconnect();
+    }
+  };
+
   return (
     <View style={styles.container}>
-      {/* Status Section */}
-      <View style={styles.statusCard}>
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Network server</Text>
-          <Text style={styles.value}>Joined</Text>
-        </View>
-      </View>
-      <Text style={styles.header}>Setup</Text>
+      {/* Bluetooth Section */}
       <View style={styles.card}>
+        <Text style={styles.header}>Bluetooth</Text>
+        <View style={styles.infoRow}>
+          <Text style={styles.label}>Connection status</Text>
+          <Text style={styles.value}>Connected</Text>
+        </View>
+        <TouchableOpacity style={styles.disconnectButton} onPress={handleDisconnect}>
+          <Text style={styles.disconnectButtonText}>Disconnect</Text>
+        </TouchableOpacity>
+      </View>
+      {/* LoRaWAN Section */}
+      <View style={styles.card}>
+        <Text style={styles.header}>LoRaWAN</Text>
+        {/* Network Server Info (separate part at the top) */}
+        <View style={styles.statusSubCard}>
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Network server</Text>
+            <Text style={styles.value}>Joined</Text>
+          </View>
+        </View>
         <InfoRow label="DevEUI" value={defaultDeviceInfo.devEUI} />
         <InfoRow label="AppEUI" value={defaultDeviceInfo.appEUI} />
         <InfoRow label="AppKey" value={defaultDeviceInfo.appKey} />
@@ -63,12 +82,12 @@ const DeviceMain: React.FC<DeviceMainProps> = () => {
         </View>
         <InfoRow label="DR (Data Rate)" value={defaultDeviceInfo.dr} />
         <InfoRow label="TX Power" value={defaultDeviceInfo.txPower} />
+        {adrChanged && (
+          <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
+            <Text style={styles.sendButtonText}>Send to LoRaStick</Text>
+          </TouchableOpacity>
+        )}
       </View>
-      {adrChanged && (
-        <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
-          <Text style={styles.sendButtonText}>Send to LoRaStick</Text>
-        </TouchableOpacity>
-      )}
     </View>
   );
 };
@@ -86,24 +105,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#f7fafd',
     padding: 24,
   },
-  statusCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
-    marginBottom: 18,
-  },
-  header: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 24,
-    textAlign: 'center',
-    color: '#007AFF',
-  },
   card: {
     backgroundColor: '#fff',
     borderRadius: 16,
@@ -114,6 +115,19 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
     marginBottom: 24,
+  },
+  statusSubCard: {
+    backgroundColor: '#f3f8fd',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 18,
+  },
+  header: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 24,
+    textAlign: 'center',
+    color: '#007AFF',
   },
   infoRow: {
     flexDirection: 'row',
@@ -160,6 +174,27 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 17,
+    letterSpacing: 0.5,
+  },
+  disconnectButton: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#FF3B30',
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 4,
+    shadowColor: '#FF3B30',
+    shadowOpacity: 0.10,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+  disconnectButtonText: {
+    color: '#FF3B30',
+    fontWeight: 'bold',
+    fontSize: 16,
     letterSpacing: 0.5,
   },
 });

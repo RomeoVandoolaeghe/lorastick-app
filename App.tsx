@@ -91,7 +91,7 @@ function App() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      <Text style={styles.title}>LoraStick</Text>
+      <Text style={styles.title}>LoraStick Manager</Text>
       <View style={styles.buttonContainer}>
         <Button title={scanning ? 'Scanning...' : 'Connect'} onPress={scanForDevices} disabled={scanning} />
         <View style={styles.buttonSpacer} />
