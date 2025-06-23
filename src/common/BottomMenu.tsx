@@ -7,9 +7,17 @@ export type MenuTab = 'tests' | 'device' | 'user';
 interface BottomMenuProps {
   selected: MenuTab;
   onTabChange: (tab: MenuTab) => void;
+  deviceConnected?: boolean;
 }
 
-export const BottomMenu: React.FC<BottomMenuProps> = ({ selected, onTabChange }) => {
+export const BottomMenu: React.FC<BottomMenuProps> = ({ selected, onTabChange, deviceConnected = false }) => {
+  const getDeviceIconColor = () => {
+    if (selected === 'device') {
+      return '#007AFF'; // Selected blue color
+    }
+    return deviceConnected ? '#4CAF50' : '#F44336'; // Green when connected, red when disconnected
+  };
+
   return (
     <View style={styles.menuBar}>
       <TouchableOpacity style={styles.menuItem} onPress={() => onTabChange('tests')}>
@@ -17,7 +25,7 @@ export const BottomMenu: React.FC<BottomMenuProps> = ({ selected, onTabChange })
         <Text style={[styles.menuText, selected === 'tests' && styles.selectedText]}>Run</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.menuItem} onPress={() => onTabChange('device')}>
-        <MaterialIcons name="settings" size={28} color={selected === 'device' ? '#007AFF' : '#888'} />
+        <MaterialIcons name="settings" size={28} color={getDeviceIconColor()} />
         <Text style={[styles.menuText, selected === 'device' && styles.selectedText]}>Device</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.menuItem} onPress={() => onTabChange('user')}>

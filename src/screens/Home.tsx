@@ -1,13 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import DeviceMain from './DeviceMain';
 import TestMain from './TestMain';
 import UserMain from './UserMain';
 import { BottomMenu, MenuTab } from '../common/BottomMenu';
 import { Device } from 'react-native-ble-plx';
+import { StorageService } from '../services/storage';
 
 export function HomePage({ device, demoMode = false, onBack }: { device: Device | null, demoMode?: boolean, onBack: () => void }) {
   const [selectedTab, setSelectedTab] = useState<MenuTab>('tests');
+  const [deviceConnected, setDeviceConnected] = useState(false);
+
+  // Load device connection status on component mount
+  useEffect(() => {
+    const loadConnectionStatus = async () => {
+      const isConnected = await StorageService.isDeviceConnected();
+      setDeviceConnected(isConnected);
+    };
+    loadConnectionStatus();
+  }, []);
+
+  // Update connection status when demoMode changes
+  useEffect(() => {
+    if (demoMode) {
+      setDeviceConnected(true);
+    } else {
+      // Only update to false if we don't have a real device connected
+      const checkRealDeviceConnection = async () => {
+        const isConnected = await StorageService.isDeviceConnected();
+        setDeviceConnected(isConnected);
+      };
+      checkRealDeviceConnection();
+    }
+  }, [demoMode]);
 
   let Content;
   if (selectedTab === 'device') {
@@ -28,7 +53,11 @@ export function HomePage({ device, demoMode = false, onBack }: { device: Device 
       <View style={styles.content}>
         {Content}
       </View>
-      <BottomMenu selected={selectedTab} onTabChange={setSelectedTab} />
+      <BottomMenu 
+        selected={selectedTab} 
+        onTabChange={setSelectedTab} 
+        deviceConnected={deviceConnected}
+      />
     </View>
   );
 }

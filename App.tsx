@@ -116,6 +116,7 @@ function App() {
       await connected.discoverAllServicesAndCharacteristics();
       setConnectedDevice(connected); // ✅ garder la référence
       await StorageService.setDemoMode('disable');
+      await StorageService.setDeviceBLEStatus('connected');
       setDemoMode(false);
       Alert.alert('Connexion réussie', `Connecté à ${device.name}`);
       setShowTestPage(true);
@@ -151,6 +152,7 @@ function App() {
         <View style={styles.buttonSpacer} />
         <Button title="Demo Mode" onPress={async () => {
           await StorageService.setDemoMode('enable');
+          await StorageService.setDeviceBLEStatus('connected');
           setDemoMode(true);
           setShowTestPage(true);
         }} />

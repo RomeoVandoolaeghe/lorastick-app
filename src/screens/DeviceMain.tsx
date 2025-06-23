@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Text, Switch, TouchableOpacity } from 'react-native';
 import { MenuTab } from '../common/BottomMenu';
+import { StorageService, DeviceBLEStatus } from '../services/storage';
 
 interface DeviceMainProps {
   selected: MenuTab;
@@ -23,6 +24,16 @@ const defaultDeviceInfo = {
 const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDisconnect }) => {
   const [adr, setAdr] = useState(defaultDeviceInfo.adr);
   const [adrChanged, setAdrChanged] = useState(false);
+  const [bleStatus, setBleStatus] = useState<DeviceBLEStatus>('disconnected');
+
+  // Load BLE status on component mount
+  useEffect(() => {
+    const loadBLEStatus = async () => {
+      const status = await StorageService.getDeviceBLEStatus();
+      setBleStatus(status);
+    };
+    loadBLEStatus();
+  }, []);
 
   const handleAdrToggle = (value: boolean) => {
     setAdr(value);
@@ -34,10 +45,22 @@ const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDiscon
     // Example: sendConfigToLoRaStick({ ... })
   };
 
-  const handleDisconnect = () => {
+  const handleDisconnect = async () => {
+    // Update stored BLE status to disconnected
+    await StorageService.setDeviceBLEStatus('disconnected');
+    setBleStatus('disconnected');
+    
     if (onDisconnect) {
       onDisconnect();
     }
+  };
+
+  const getStatusColor = () => {
+    return bleStatus === 'connected' ? '#4CAF50' : '#F44336';
+  };
+
+  const getStatusText = () => {
+    return bleStatus === 'connected' ? 'Connected' : 'Disconnected';
   };
 
   return (
@@ -47,7 +70,7 @@ const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDiscon
         <Text style={styles.header}>Bluetooth</Text>
         <View style={styles.infoRow}>
           <Text style={styles.label}>Connection status</Text>
-          <Text style={styles.value}>Connected</Text>
+          <Text style={[styles.value, { color: getStatusColor() }]}>{getStatusText()}</Text>
         </View>
         <TouchableOpacity style={styles.disconnectButton} onPress={handleDisconnect}>
           <Text style={styles.disconnectButtonText}>Disconnect</Text>
