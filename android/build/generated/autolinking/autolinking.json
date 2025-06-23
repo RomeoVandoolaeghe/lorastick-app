@@ -1,25 +1,50 @@
 {
-  "root": "C:\\Users\\Chris\\OneDrive\\Bureau\\PILOT THINGS\\lorastick",
-  "reactNativePath": "C:\\Users\\Chris\\OneDrive\\Bureau\\PILOT THINGS\\lorastick\\node_modules\\react-native",
+  "root": "/Users/eszymko/Documents local/SoftDev/lorastick",
+  "reactNativePath": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/react-native",
   "reactNativeVersion": "0.80",
   "dependencies": {
+    "@react-native-async-storage/async-storage": {
+      "root": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/@react-native-async-storage/async-storage",
+      "name": "@react-native-async-storage/async-storage",
+      "platforms": {
+        "ios": {
+          "podspecPath": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/@react-native-async-storage/async-storage/RNCAsyncStorage.podspec",
+          "version": "2.2.0",
+          "configurations": [],
+          "scriptPhases": []
+        },
+        "android": {
+          "sourceDir": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/@react-native-async-storage/async-storage/android",
+          "packageImportPath": "import com.reactnativecommunity.asyncstorage.AsyncStoragePackage;",
+          "packageInstance": "new AsyncStoragePackage()",
+          "buildTypes": [],
+          "libraryName": "rnasyncstorage",
+          "componentDescriptors": [],
+          "cmakeListsPath": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/@react-native-async-storage/async-storage/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cxxModuleCMakeListsModuleName": null,
+          "cxxModuleCMakeListsPath": null,
+          "cxxModuleHeaderName": null,
+          "isPureCxxDependency": false
+        }
+      }
+    },
     "react-native-ble-plx": {
-      "root": "C:\\Users\\Chris\\OneDrive\\Bureau\\PILOT THINGS\\lorastick\\node_modules\\react-native-ble-plx",
+      "root": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/react-native-ble-plx",
       "name": "react-native-ble-plx",
       "platforms": {
         "ios": {
-          "podspecPath": "C:\\Users\\Chris\\OneDrive\\Bureau\\PILOT THINGS\\lorastick\\node_modules\\react-native-ble-plx\\react-native-ble-plx.podspec",
+          "podspecPath": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/react-native-ble-plx/react-native-ble-plx.podspec",
           "version": "2.0.3",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "C:\\Users\\Chris\\OneDrive\\Bureau\\PILOT THINGS\\lorastick\\node_modules\\react-native-ble-plx\\android",
+          "sourceDir": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/react-native-ble-plx/android",
           "packageImportPath": "import com.polidea.reactnativeble.BlePackage;",
           "packageInstance": "new BlePackage()",
           "buildTypes": [],
           "componentDescriptors": [],
-          "cmakeListsPath": "C:/Users/Chris/OneDrive/Bureau/PILOT THINGS/lorastick/node_modules/react-native-ble-plx/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/react-native-ble-plx/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -28,23 +53,23 @@
       }
     },
     "react-native-vector-icons": {
-      "root": "C:\\Users\\Chris\\OneDrive\\Bureau\\PILOT THINGS\\lorastick\\node_modules\\react-native-vector-icons",
+      "root": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/react-native-vector-icons",
       "name": "react-native-vector-icons",
       "platforms": {
         "ios": {
-          "podspecPath": "C:\\Users\\Chris\\OneDrive\\Bureau\\PILOT THINGS\\lorastick\\node_modules\\react-native-vector-icons\\RNVectorIcons.podspec",
+          "podspecPath": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/react-native-vector-icons/RNVectorIcons.podspec",
           "version": "10.2.0",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "C:\\Users\\Chris\\OneDrive\\Bureau\\PILOT THINGS\\lorastick\\node_modules\\react-native-vector-icons\\android",
+          "sourceDir": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/react-native-vector-icons/android",
           "packageImportPath": "import com.oblador.vectoricons.VectorIconsPackage;",
           "packageInstance": "new VectorIconsPackage()",
           "buildTypes": [],
           "libraryName": "RNVectorIconsSpec",
           "componentDescriptors": [],
-          "cmakeListsPath": "C:/Users/Chris/OneDrive/Bureau/PILOT THINGS/lorastick/node_modules/react-native-vector-icons/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/react-native-vector-icons/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -215,7 +240,7 @@
         {
           "name": "--path <path>",
           "description": "Path to the React Native project root.",
-          "default": "C:\\Users\\Chris\\OneDrive\\Bureau\\PILOT THINGS\\lorastick"
+          "default": "/Users/eszymko/Documents local/SoftDev/lorastick"
         },
         {
           "name": "--platform <string>",
@@ -272,7 +297,7 @@
         {
           "name": "--terminal <string>",
           "description": "Launches the Metro Bundler in a new window using the specified terminal path.",
-          "default": "cmd.exe"
+          "default": "vscode"
         },
         {
           "name": "--binary-path <string>",
@@ -440,7 +465,7 @@
         {
           "name": "--terminal <string>",
           "description": "Launches the Metro Bundler in a new window using the specified terminal path.",
-          "default": "cmd.exe"
+          "default": "vscode"
         },
         {
           "name": "--appId <string>",
@@ -515,16 +540,16 @@
   "assets": [],
   "project": {
     "ios": {
-      "sourceDir": "C:\\Users\\Chris\\OneDrive\\Bureau\\PILOT THINGS\\lorastick\\ios",
+      "sourceDir": "/Users/eszymko/Documents local/SoftDev/lorastick/ios",
       "xcodeProject": {
-        "name": "lorastick.xcodeproj",
+        "name": "lorastick.xcworkspace",
         "path": ".",
-        "isWorkspace": false
+        "isWorkspace": true
       },
       "assets": []
     },
     "android": {
-      "sourceDir": "C:\\Users\\Chris\\OneDrive\\Bureau\\PILOT THINGS\\lorastick\\android",
+      "sourceDir": "/Users/eszymko/Documents local/SoftDev/lorastick/android",
       "appName": "app",
       "packageName": "com.lorastick",
       "applicationId": "com.lorastick",

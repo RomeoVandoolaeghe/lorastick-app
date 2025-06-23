@@ -5,9 +5,10 @@
  * @format
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Button, FlatList, Text, StyleSheet, StatusBar, PermissionsAndroid, Platform, Alert, Linking, TouchableOpacity } from 'react-native';
 import { BleManager, Device } from 'react-native-ble-plx';
+import { StorageService, DemoModeStatus } from './src/services/storage';
 
 const manager = new BleManager();
 
@@ -42,6 +43,22 @@ function App() {
   const [scanning, setScanning] = useState(false);
   const [showTestPage, setShowTestPage] = useState(false);
   const [connectedDevice, setConnectedDevice] = useState<Device | null>(null);
+  const [demoMode, setDemoMode] = useState(false);
+
+  // Load demo mode setting on app start
+  useEffect(() => {
+    const loadDemoMode = async () => {
+      const isEnabled = await StorageService.isDemoModeEnabled();
+      setDemoMode(isEnabled);
+    };
+    loadDemoMode();
+  }, []);
+
+  const handleDemoModeToggle = async (value: boolean) => {
+    const status: DemoModeStatus = value ? 'enable' : 'disable';
+    await StorageService.setDemoMode(status);
+    setDemoMode(value);
+  };
 
   const handlePermissionDenied = () => {
     Alert.alert(
@@ -98,6 +115,8 @@ function App() {
       const connected = await manager.connectToDevice(device.id);
       await connected.discoverAllServicesAndCharacteristics();
       setConnectedDevice(connected); // ✅ garder la référence
+      await StorageService.setDemoMode('disable');
+      setDemoMode(false);
       Alert.alert('Connexion réussie', `Connecté à ${device.name}`);
       setShowTestPage(true);
     } catch (error: any) {
@@ -110,7 +129,7 @@ function App() {
     return (
       <HomePage
         device={connectedDevice}
-        demoMode={!connectedDevice}
+        demoMode={demoMode}
         onBack={() => {
           if (connectedDevice) {
             manager.cancelDeviceConnection(connectedDevice.id);
@@ -130,7 +149,11 @@ function App() {
       <View style={styles.buttonContainer}>
         <Button title={scanning ? 'Scanning...' : 'Connect'} onPress={scanForDevices} disabled={scanning} />
         <View style={styles.buttonSpacer} />
-        <Button title="Demo Mode" onPress={() => setShowTestPage(true)} />
+        <Button title="Demo Mode" onPress={async () => {
+          await StorageService.setDemoMode('enable');
+          setDemoMode(true);
+          setShowTestPage(true);
+        }} />
       </View>
       <FlatList
         data={devices}
