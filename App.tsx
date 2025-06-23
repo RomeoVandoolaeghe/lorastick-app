@@ -110,6 +110,7 @@ function App() {
     return (
       <HomePage
         device={connectedDevice}
+        demoMode={!connectedDevice}
         onBack={() => {
           if (connectedDevice) {
             manager.cancelDeviceConnection(connectedDevice.id);

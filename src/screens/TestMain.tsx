@@ -16,6 +16,7 @@ interface TestMainProps {
   selected: MenuTab;
   onTabChange: (tab: MenuTab) => void;
   device: Device | null;
+  demoMode?: boolean;
 }
 
 const testMethods = [

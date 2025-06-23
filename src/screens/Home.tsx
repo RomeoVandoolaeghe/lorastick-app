@@ -6,20 +6,25 @@ import UserMain from './UserMain';
 import { BottomMenu, MenuTab } from '../common/BottomMenu';
 import { Device } from 'react-native-ble-plx';
 
-export function HomePage({ device, onBack }: { device: Device | null, onBack: () => void }) {
+export function HomePage({ device, demoMode = false, onBack }: { device: Device | null, demoMode?: boolean, onBack: () => void }) {
   const [selectedTab, setSelectedTab] = useState<MenuTab>('tests');
 
   let Content;
   if (selectedTab === 'device') {
     Content = <DeviceMain selected={selectedTab} onTabChange={setSelectedTab} onDisconnect={onBack} />;
   } else if (selectedTab === 'tests') {
-    Content = <TestMain selected={selectedTab} onTabChange={setSelectedTab} device={device} />;
+    Content = <TestMain selected={selectedTab} onTabChange={setSelectedTab} device={device} demoMode={demoMode} />;
   } else {
     Content = <UserMain selected={selectedTab} onTabChange={setSelectedTab} />;
   }
 
   return (
     <View style={styles.container}>
+      {demoMode && (
+        <View style={styles.demoHeader}>
+          <Text style={styles.demoText}>Demo Mode</Text>
+        </View>
+      )}
       <View style={styles.content}>
         {Content}
       </View>
@@ -35,5 +40,14 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  demoHeader: {
+    backgroundColor: '#f0f0f0',
+    padding: 10,
+    alignItems: 'center',
+  },
+  demoText: {
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
