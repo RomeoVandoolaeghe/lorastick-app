@@ -140,7 +140,6 @@ function App() {
             <Text>{item.name} ({item.id})</Text>
           </TouchableOpacity>
         )}
-        ListEmptyComponent={<Text style={styles.emptyText}>No devices found</Text>}
         style={styles.list}
       />
     </View>
