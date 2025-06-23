@@ -87,7 +87,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
 
       const writeChar = characteristics.find(c => c.isWritableWithoutResponse);
       if (!writeChar) {
-        Alert.alert('Erreur', 'Impossible d’envoyer la commande');
+        Alert.alert("Erreur", "Impossible d'envoyer la commande");
         return;
       }
 
@@ -98,7 +98,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
         Buffer.from(command, 'utf-8').toString('base64')
       );
     } catch (e: any) {
-      Alert.alert('Erreur', e.message || 'Echec de l’envoi');
+      Alert.alert("Erreur", e.message || "Echec de l'envoi");
     }
   };
 
@@ -171,8 +171,9 @@ const styles = StyleSheet.create({
   },
   cardRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     marginBottom: 28,
+    flexWrap: 'wrap',
   },
   methodCard: {
     flex: 0,
@@ -182,6 +183,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 22,
     marginHorizontal: 6,
+    marginBottom: 12,
     shadowColor: '#007AFF',
     shadowOpacity: 0.10,
     shadowRadius: 10,
