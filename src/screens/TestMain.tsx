@@ -80,6 +80,10 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
     }
 
     try {
+      const TOTAL_LINKCHECKS = 1000;
+      let count = 0;
+      const startTime = Date.now();
+
       const services = await device.services();
       const allChars = await Promise.all(
         services.map(s => device.characteristicsForService(s.uuid))
@@ -87,19 +91,62 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
       const characteristics = allChars.flat();
 
       const writeChar = characteristics.find(c => c.isWritableWithoutResponse);
-      if (!writeChar) {
-        Alert.alert("Erreur", "Impossible d'envoyer la commande");
+      const notifyChar = characteristics.find(c => c.isNotifiable);
+
+      if (!writeChar || !notifyChar) {
+        Alert.alert('Erreur', 'Caractéristiques non trouvées');
         return;
       }
 
-      const command = 'ATC+LinkCheck\n';
-      await device.writeCharacteristicWithoutResponseForService(
-        writeChar.serviceUUID,
-        writeChar.uuid,
-        Buffer.from(command, 'utf-8').toString('base64')
+      // Mise à jour régulière du message d'état
+      const updateStatus = () => {
+        const elapsedSec = Math.floor((Date.now() - startTime) / 1000);
+        const min = Math.floor(elapsedSec / 60)
+          .toString()
+          .padStart(2, '0');
+        const sec = (elapsedSec % 60).toString().padStart(2, '0');
+        Alert.alert(
+          'LinkCheck en cours',
+          `${count} linkcheck effectués sur ${TOTAL_LINKCHECKS}.\n${min}:${sec} écoulées.`
+        );
+      };
+
+      // Abonnement aux réponses
+      const subscription = device.monitorCharacteristicForService(
+        notifyChar.serviceUUID,
+        notifyChar.uuid,
+        (error, characteristic) => {
+          if (error) return;
+          if (!characteristic?.value) return;
+
+          const decoded = Buffer.from(characteristic.value, 'base64').toString('utf-8');
+          if (decoded.startsWith('+LINKCHECK:')) {
+            count++;
+            updateStatus();
+
+            if (count >= TOTAL_LINKCHECKS) {
+              clearInterval(sendInterval);
+              subscription.remove();
+              Alert.alert('Terminé', `${TOTAL_LINKCHECKS} linkcheck reçus ✅`);
+            }
+          }
+        }
       );
+
+      // Envoi régulier de la commande
+      const sendInterval = setInterval(async () => {
+        await device.writeCharacteristicWithoutResponseForService(
+          writeChar.serviceUUID,
+          writeChar.uuid,
+          Buffer.from('ATC+LinkCheck\n', 'utf-8').toString('base64')
+        );
+      }, 10000); // toutes les 10s
+
+      // Affichage immédiat
+      updateStatus();
+
     } catch (e: any) {
-      Alert.alert("Erreur", e.message || "Echec de l'envoi");
+      Alert.alert('Erreur', e.message || 'Échec');
     }
   };
 
