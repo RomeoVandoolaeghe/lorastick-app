@@ -80,7 +80,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
     }
 
     try {
-      const TOTAL_LINKCHECKS = 1000;
+      const TOTAL_LINKCHECKS = 100;
       let count = 0;
       const startTime = Date.now();
 
