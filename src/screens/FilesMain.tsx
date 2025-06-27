@@ -13,7 +13,9 @@ import { Buffer } from 'buffer';
 interface FilesMainProps {
     device: Device | null;
 }
-
+//--------------------------------
+// Get file from stick
+//--------------------------------
 const FilesMain: React.FC<FilesMainProps> = ({ device }) => {
     const TOTAL_LINKCHECKS = 100;
 
@@ -68,8 +70,8 @@ const FilesMain: React.FC<FilesMainProps> = ({ device }) => {
                             const elapsed = Date.now() - startTime;
                             subscription.remove();
                             Alert.alert(
-                                'Terminé',
-                                `${TOTAL_LINKCHECKS} linkchecks reçus ✅\n${Math.floor(elapsed / 1000)}s ${elapsed % 1000}ms`
+                                'Finished',
+                                `${TOTAL_LINKCHECKS} linkchecks received ✅\n${Math.floor(elapsed / 1000)}s ${elapsed % 1000}ms`
                             );
                         }
                     }
@@ -82,7 +84,7 @@ const FilesMain: React.FC<FilesMainProps> = ({ device }) => {
                 Buffer.from('RUN Genlinkcheck\n', 'utf-8').toString('base64')
             );
 
-            Alert.alert('Lancement', `Récupération des fichiers...`);
+            Alert.alert('Uploading', `Getting file...`);
 
         } catch (e: any) {
             Alert.alert('Erreur', e.message || 'Échec');
@@ -91,7 +93,7 @@ const FilesMain: React.FC<FilesMainProps> = ({ device }) => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.header}>Fichier de linkchecks</Text>
+            <Text style={styles.header}>Tests results</Text>
             <TouchableOpacity style={styles.button} onPress={getFromStick}>
                 <Text style={styles.buttonText}>Get from stick</Text>
             </TouchableOpacity>
