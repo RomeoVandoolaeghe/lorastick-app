@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text, Switch, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Text, Switch, TouchableOpacity, Alert } from 'react-native';
 import { MenuTab } from '../common/BottomMenu';
 import { StorageService, DeviceBLEStatus } from '../services/storage';
 
@@ -26,7 +26,6 @@ const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDiscon
   const [adrChanged, setAdrChanged] = useState(false);
   const [bleStatus, setBleStatus] = useState<DeviceBLEStatus>('disconnected');
 
-  // Load BLE status on component mount
   useEffect(() => {
     const loadBLEStatus = async () => {
       const status = await StorageService.getDeviceBLEStatus();
@@ -41,27 +40,23 @@ const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDiscon
   };
 
   const handleSend = () => {
-    // TODO: Implement sending updated configuration to LoRaStick device
-    // Example: sendConfigToLoRaStick({ ... })
+    // TODO: Envoyer la configuration à l'appareil
+    Alert.alert('Configuration', 'Configuration envoyée au LoRaStick (TODO)');
   };
 
   const handleDisconnect = async () => {
-    // Update stored BLE status to disconnected
     await StorageService.setDeviceBLEStatus('disconnected');
     setBleStatus('disconnected');
-    
-    if (onDisconnect) {
-      onDisconnect();
-    }
+    if (onDisconnect) onDisconnect();
   };
 
-  const getStatusColor = () => {
-    return bleStatus === 'connected' ? '#4CAF50' : '#F44336';
+  const handleJoin = () => {
+    // TODO: Implémenter l'envoi de la commande ATC+JOIN via BLE
+    Alert.alert('Join');
   };
 
-  const getStatusText = () => {
-    return bleStatus === 'connected' ? 'Connected' : 'Disconnected';
-  };
+  const getStatusColor = () => bleStatus === 'connected' ? '#4CAF50' : '#F44336';
+  const getStatusText = () => bleStatus === 'connected' ? 'Connected' : 'Disconnected';
 
   return (
     <View style={styles.container}>
@@ -76,16 +71,21 @@ const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDiscon
           <Text style={styles.disconnectButtonText}>Disconnect</Text>
         </TouchableOpacity>
       </View>
+
       {/* LoRaWAN Section */}
       <View style={styles.card}>
         <Text style={styles.header}>LoRaWAN</Text>
-        {/* Network Server Info (separate part at the top) */}
+
+        {/* Network Server Join Button */}
         <View style={styles.statusSubCard}>
           <View style={styles.infoRow}>
             <Text style={styles.label}>Network server</Text>
-            <Text style={styles.value}>Joined</Text>
+            <TouchableOpacity style={styles.joinButton} onPress={handleJoin}>
+              <Text style={styles.joinButtonText}>Join</Text>
+            </TouchableOpacity>
           </View>
         </View>
+
         <InfoRow label="DevEUI" value={defaultDeviceInfo.devEUI} />
         <InfoRow label="AppEUI" value={defaultDeviceInfo.appEUI} />
         <InfoRow label="AppKey" value={defaultDeviceInfo.appKey} />
@@ -220,6 +220,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     letterSpacing: 0.5,
   },
+  joinButton: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  joinButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: 'bold',
+  },
 });
 
-export default DeviceMain; 
+export default DeviceMain;

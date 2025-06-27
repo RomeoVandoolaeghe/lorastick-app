@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   StyleSheet,
   Text,
   TouchableOpacity,
   Alert,
-  FlatList,
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { MenuTab } from '../common/BottomMenu';
@@ -42,8 +41,6 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
   const [isPeriodic, setIsPeriodic] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<Period>('1h');
   const [selectedFrequency, setSelectedFrequency] = useState<Frequency>('10s');
-  const [progress, setProgress] = useState(0);
-  const [results, setResults] = useState<string[]>([]);
 
   const runUnitTest = async () => {
     if (!device) {
@@ -52,10 +49,6 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
     }
 
     try {
-      const TOTAL_LINKCHECKS = 100;
-      let count = 0;
-      let startTime = 0;
-
       const services = await device.services();
       const allChars = await Promise.all(
         services.map(s => device.characteristicsForService(s.uuid))
@@ -70,9 +63,6 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
         return;
       }
 
-      setProgress(0);
-      setResults([]);
-
       const subscription = device.monitorCharacteristicForService(
         notifyChar.serviceUUID,
         notifyChar.uuid,
@@ -81,21 +71,8 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
 
           const decoded = Buffer.from(characteristic.value, 'base64').toString('utf-8');
           if (decoded.startsWith('+LINKCHECK:')) {
-            count++;
-
-            if (count === 1) startTime = Date.now();
-
-            setProgress(Math.round((count / TOTAL_LINKCHECKS) * 100));
-            setResults(prev => [...prev, decoded.trim()]);
-
-            if (count >= TOTAL_LINKCHECKS) {
-              const elapsed = Date.now() - startTime;
-              subscription.remove();
-              Alert.alert(
-                'Terminé',
-                `${TOTAL_LINKCHECKS} linkchecks reçus ✅\n${Math.floor(elapsed / 1000)}s ${elapsed % 1000}ms`
-              );
-            }
+            subscription.remove();
+            Alert.alert('Résultat reçu', decoded.trim());
           }
         }
       );
@@ -103,12 +80,28 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
       await device.writeCharacteristicWithoutResponseForService(
         writeChar.serviceUUID,
         writeChar.uuid,
-        Buffer.from('ATC+TestLinkCheck\n', 'utf-8').toString('base64')
+        Buffer.from('ATC+LinkCheck\n', 'utf-8').toString('base64')
       );
 
-      Alert.alert('Lancement', `Génération de ${TOTAL_LINKCHECKS} linkchecks...`);
+      Alert.alert('Envoi', 'Commande LinkCheck envoyée...');
+
     } catch (e: any) {
       Alert.alert('Erreur', e.message || 'Échec');
+    }
+  };
+
+  const handleRun = () => {
+    if (!selectedMethod) return;
+
+    if (isPeriodic) {
+      Alert.alert(
+        'Info',
+        `Mode périodique sélectionné.\n${Math.floor(
+          periodSeconds[selectedPeriod] / frequencySeconds[selectedFrequency]
+        )} tests seront exécutés.`
+      );
+    } else {
+      runUnitTest();
     }
   };
 
@@ -154,7 +147,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
               </TouchableOpacity>
             </View>
 
-            {isPeriodic ? (
+            {isPeriodic && (
               <>
                 <View style={styles.frequencyRow}>
                   {frequencies.map(freq => (
@@ -188,31 +181,12 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
                   Total tests: {Math.floor(periodSeconds[selectedPeriod] / frequencySeconds[selectedFrequency])}
                 </Text>
               </>
-            ) : null}
+            )}
           </View>
 
-          <TouchableOpacity
-            style={styles.runButton}
-            onPress={() => {
-              if (!isPeriodic) runUnitTest();
-              else Alert.alert('Info', 'Periodic mode n’est pas encore implémenté.');
-            }}
-          >
+          <TouchableOpacity style={styles.runButton} onPress={handleRun}>
             <Text style={styles.runButtonText}>Run</Text>
           </TouchableOpacity>
-
-          {!isPeriodic && (
-            <>
-              <Text style={{ textAlign: 'center', marginVertical: 16, fontSize: 16 }}>
-                Progression : {progress}%
-              </Text>
-              <FlatList
-                data={results}
-                keyExtractor={(item, index) => index.toString()}
-                renderItem={({ item }) => <Text style={{ paddingVertical: 4 }}>{item}</Text>}
-              />
-            </>
-          )}
         </>
       )}
     </View>

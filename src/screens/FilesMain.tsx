@@ -15,7 +15,10 @@ interface FilesMainProps {
 }
 
 const FilesMain: React.FC<FilesMainProps> = ({ device }) => {
+    const TOTAL_LINKCHECKS = 100;
+
     const [fileLines, setFileLines] = useState<string[]>([]);
+    const [progress, setProgress] = useState(0);
 
     const getFromStick = async () => {
         if (!device) {
@@ -39,6 +42,11 @@ const FilesMain: React.FC<FilesMainProps> = ({ device }) => {
             }
 
             let lines: string[] = [];
+            let count = 0;
+            let startTime = 0;
+
+            setProgress(0);
+            setFileLines([]);
 
             const subscription = device.monitorCharacteristicForService(
                 notifyChar.serviceUUID,
@@ -47,25 +55,34 @@ const FilesMain: React.FC<FilesMainProps> = ({ device }) => {
                     if (error || !characteristic?.value) return;
 
                     const decoded = Buffer.from(characteristic.value, 'base64').toString('utf-8');
-                    if (decoded.trim() === 'EOF') {
-                        subscription.remove();
-                        Alert.alert('Fichier reçu', `Fichier complet (${lines.length} lignes)`);
-                        setFileLines(lines);
-                        return;
-                    }
+                    if (decoded.startsWith('+LINKCHECK:')) {
+                        count++;
 
-                    lines.push(decoded.trim());
+                        if (count === 1) startTime = Date.now();
+
+                        lines.push(decoded.trim());
+                        setFileLines([...lines]); // mise à jour de l’affichage
+                        setProgress(Math.round((count / TOTAL_LINKCHECKS) * 100));
+
+                        if (count >= TOTAL_LINKCHECKS) {
+                            const elapsed = Date.now() - startTime;
+                            subscription.remove();
+                            Alert.alert(
+                                'Terminé',
+                                `${TOTAL_LINKCHECKS} linkchecks reçus ✅\n${Math.floor(elapsed / 1000)}s ${elapsed % 1000}ms`
+                            );
+                        }
+                    }
                 }
             );
 
-            // Envoie la commande pour récupérer le fichier
             await device.writeCharacteristicWithoutResponseForService(
                 writeChar.serviceUUID,
                 writeChar.uuid,
-                Buffer.from('ATC+GetFile\n', 'utf-8').toString('base64')
+                Buffer.from('ATC+TestLinkCheck\n', 'utf-8').toString('base64')
             );
 
-            Alert.alert('Téléchargement...', 'Récupération du fichier en cours');
+            Alert.alert('Lancement', `Récupération des fichiers...`);
 
         } catch (e: any) {
             Alert.alert('Erreur', e.message || 'Échec');
@@ -74,16 +91,18 @@ const FilesMain: React.FC<FilesMainProps> = ({ device }) => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.header}>Fichiers depuis le stick</Text>
+            <Text style={styles.header}>Fichier de linkchecks</Text>
             <TouchableOpacity style={styles.button} onPress={getFromStick}>
                 <Text style={styles.buttonText}>Get from stick</Text>
             </TouchableOpacity>
+
+            <Text style={styles.progress}>Progression : {progress}%</Text>
 
             <FlatList
                 data={fileLines}
                 keyExtractor={(item, index) => index.toString()}
                 renderItem={({ item }) => <Text style={styles.line}>{item}</Text>}
-                style={{ marginTop: 20 }}
+                style={{ marginTop: 16 }}
             />
         </View>
     );
@@ -114,6 +133,12 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontWeight: 'bold',
         fontSize: 18,
+    },
+    progress: {
+        textAlign: 'center',
+        marginVertical: 16,
+        fontSize: 16,
+        color: '#333',
     },
     line: {
         paddingVertical: 4,
