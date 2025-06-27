@@ -79,7 +79,7 @@ const FilesMain: React.FC<FilesMainProps> = ({ device }) => {
             await device.writeCharacteristicWithoutResponseForService(
                 writeChar.serviceUUID,
                 writeChar.uuid,
-                Buffer.from('ATC+TestLinkCheck\n', 'utf-8').toString('base64')
+                Buffer.from('RUN Genlinkcheck\n', 'utf-8').toString('base64')
             );
 
             Alert.alert('Lancement', `Récupération des fichiers...`);
