@@ -36,9 +36,9 @@ void loop() {
   while (api.ble.uart.available()) {
     char c = api.ble.uart.read();
     if (c == '\n') {
-      if (incoming == "ATC+TestLinkCheck") {
+      if (incoming == "RUN Testlinkcheck") {
         testTriggered = true;
-      } else if (incoming == "ATC+GetFile") {
+      } else if (incoming == "RUN Getfile") {
         fileRequested = true;
       }
       incoming = "";
