@@ -105,29 +105,49 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
     }
   };
 
+  const getMethodLabel = (key: TestMethod | null) => {
+    const method = testMethods.find(m => m.key === key);
+    return method ? method.label : '';
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Select method</Text>
-      <View style={styles.cardRow}>
-        {testMethods.map((method) => (
+      {selectedMethod ? (
+        <View style={styles.headerRow}>
           <TouchableOpacity
-            key={method.key}
-            style={[styles.methodCard, selectedMethod === method.key && styles.methodCardSelected]}
-            onPress={() => setSelectedMethod(method.key)}
-            activeOpacity={0.85}
+            onPress={() => setSelectedMethod(null)}
+            style={styles.backButton}
+            accessibilityLabel="Back to method selection"
           >
-            <MaterialIcons
-              name={method.icon}
-              size={32}
-              color={selectedMethod === method.key ? '#fff' : '#007AFF'}
-              style={styles.methodIcon}
-            />
-            <Text style={[styles.methodCardText, selectedMethod === method.key && styles.methodCardTextSelected]}>
-              {method.label}
-            </Text>
+            <MaterialIcons name="arrow-back" size={28} color="#007AFF" />
           </TouchableOpacity>
-        ))}
-      </View>
+          <Text style={styles.headerSelected}>{getMethodLabel(selectedMethod)}</Text>
+        </View>
+      ) : (
+        <Text style={styles.header}>Select method</Text>
+      )}
+      {selectedMethod === null && (
+        <View style={styles.cardRow}>
+          {testMethods.map((method) => (
+            <TouchableOpacity
+              key={method.key}
+              style={[styles.methodCard, selectedMethod === method.key && styles.methodCardSelected]}
+              onPress={() => setSelectedMethod(method.key)}
+              activeOpacity={0.85}
+            >
+              <MaterialIcons
+                name={method.icon}
+                size={32}
+                color={selectedMethod === method.key ? '#fff' : '#007AFF'}
+                style={styles.methodIcon}
+              />
+              <Text style={[styles.methodCardText, selectedMethod === method.key && styles.methodCardTextSelected]}>
+                {method.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
 
       {selectedMethod && (
         <>
@@ -204,6 +224,20 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 18,
     textAlign: 'center',
+    color: '#222',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 18,
+  },
+  backButton: {
+    padding: 4,
+    marginRight: 8,
+  },
+  headerSelected: {
+    fontSize: 22,
+    fontWeight: 'bold',
     color: '#222',
   },
   cardRow: {
