@@ -24,6 +24,10 @@ export const BottomMenu: React.FC<BottomMenuProps> = ({ selected, onTabChange, d
         <MaterialIcons name="network-check" size={28} color={selected === 'tests' ? '#007AFF' : '#888'} />
         <Text style={[styles.menuText, selected === 'tests' && styles.selectedText]}>Run</Text>
       </TouchableOpacity>
+      <TouchableOpacity style={styles.menuItem} onPress={() => onTabChange('files')}>
+        <MaterialIcons name="folder" size={28} color={selected === 'files' ? '#007AFF' : '#888'} />
+        <Text style={[styles.menuText, selected === 'files' && styles.selectedText]}>Files</Text>
+      </TouchableOpacity>
       <TouchableOpacity style={styles.menuItem} onPress={() => onTabChange('device')}>
         <MaterialIcons name="settings" size={28} color={getDeviceIconColor()} />
         <Text style={[styles.menuText, selected === 'device' && styles.selectedText]}>Device</Text>
@@ -32,11 +36,6 @@ export const BottomMenu: React.FC<BottomMenuProps> = ({ selected, onTabChange, d
         <MaterialIcons name="account-circle" size={28} color={selected === 'user' ? '#007AFF' : '#888'} />
         <Text style={[styles.menuText, selected === 'user' && styles.selectedText]}>User</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.menuItem} onPress={() => onTabChange('files')}>
-        <MaterialIcons name="folder" size={28} color={selected === 'files' ? '#007AFF' : '#888'} />
-        <Text style={[styles.menuText, selected === 'files' && styles.selectedText]}>Files</Text>
-      </TouchableOpacity>
-
     </View>
   );
 };
