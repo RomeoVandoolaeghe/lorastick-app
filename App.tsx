@@ -9,6 +9,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Button, FlatList, Text, StyleSheet, StatusBar, PermissionsAndroid, Platform, Alert, Linking, TouchableOpacity } from 'react-native';
 import { BleManager, Device } from 'react-native-ble-plx';
 import { StorageService, DemoModeStatus } from './src/services/storage';
+import FilesMain from './src/screens/FilesMain';
 
 const manager = new BleManager();
 

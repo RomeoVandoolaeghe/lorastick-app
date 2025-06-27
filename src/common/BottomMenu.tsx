@@ -2,7 +2,7 @@ import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
-export type MenuTab = 'tests' | 'device' | 'user';
+export type MenuTab = 'tests' | 'device' | 'user' | 'files'; // ✅ ajouté 'files'
 
 interface BottomMenuProps {
   selected: MenuTab;
@@ -32,6 +32,11 @@ export const BottomMenu: React.FC<BottomMenuProps> = ({ selected, onTabChange, d
         <MaterialIcons name="account-circle" size={28} color={selected === 'user' ? '#007AFF' : '#888'} />
         <Text style={[styles.menuText, selected === 'user' && styles.selectedText]}>User</Text>
       </TouchableOpacity>
+      <TouchableOpacity style={styles.menuItem} onPress={() => onTabChange('files')}>
+        <MaterialIcons name="folder" size={28} color={selected === 'files' ? '#007AFF' : '#888'} />
+        <Text style={[styles.menuText, selected === 'files' && styles.selectedText]}>Files</Text>
+      </TouchableOpacity>
+
     </View>
   );
 };

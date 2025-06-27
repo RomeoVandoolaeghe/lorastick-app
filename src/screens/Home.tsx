@@ -6,6 +6,8 @@ import UserMain from './UserMain';
 import { BottomMenu, MenuTab } from '../common/BottomMenu';
 import { Device } from 'react-native-ble-plx';
 import { StorageService } from '../services/storage';
+import FilesMain from './FilesMain';
+
 
 export function HomePage({ device, demoMode = false, onBack }: { device: Device | null, demoMode?: boolean, onBack: () => void }) {
   const [selectedTab, setSelectedTab] = useState<MenuTab>('tests');
@@ -39,6 +41,8 @@ export function HomePage({ device, demoMode = false, onBack }: { device: Device 
     Content = <DeviceMain selected={selectedTab} onTabChange={setSelectedTab} onDisconnect={onBack} />;
   } else if (selectedTab === 'tests') {
     Content = <TestMain selected={selectedTab} onTabChange={setSelectedTab} device={device} demoMode={demoMode} />;
+  } else if (selectedTab === 'files') {
+    Content = <FilesMain device={device} />;
   } else {
     Content = <UserMain selected={selectedTab} onTabChange={setSelectedTab} />;
   }
@@ -53,9 +57,9 @@ export function HomePage({ device, demoMode = false, onBack }: { device: Device 
       <View style={styles.content}>
         {Content}
       </View>
-      <BottomMenu 
-        selected={selectedTab} 
-        onTabChange={setSelectedTab} 
+      <BottomMenu
+        selected={selectedTab}
+        onTabChange={setSelectedTab}
         deviceConnected={deviceConnected}
       />
     </View>
