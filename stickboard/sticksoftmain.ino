@@ -22,7 +22,6 @@ void setup() {
   delay(1000);
   Serial.println("RAK4631 prêt à recevoir ATC+TestLinkCheck ou ATC+GetFile");
 
-  Serial6.begin(115200, RAK_CUSTOM_MODE);
   delay(100);
 
   uint8_t pin[] = "123456";
