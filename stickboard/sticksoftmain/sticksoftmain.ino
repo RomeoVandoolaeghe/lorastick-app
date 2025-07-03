@@ -19,6 +19,7 @@ String incoming = "";
 //--------------------------------
 void setup() {
   Serial.begin(115200);
+  
   delay(1000);
   Serial.println("RAK4631 prêt à recevoir ATC+TestLinkCheck ou ATC+GetFile");
 
