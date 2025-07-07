@@ -177,6 +177,33 @@ void GetStatus() {
 
 
 
+///////////// JoinRequest() command///////////////
+void JoinRequest() {
+  Serial.println("Tentative de join LoRaWAN (OTAA)...");
+
+  // Vérification si le join est déjà effectué
+  if (api.lorawan.njs.get()) {
+    Serial.println("Déjà connecté au réseau LoRaWAN.");
+    api.ble.uart.write((uint8_t*)"Already Joined\n");
+  }
+
+  //sinon on join
+  else {
+    Serial.println("Envoi de la requête de join...");
+    api.lorawan.join();  // Envoi de la requête de join
+    delay(10000);         // Attente de 10 secondes pour le join
+    if (api.lorawan.njs.get()) {
+      Serial.println("Join réussi !");
+      api.ble.uart.write((uint8_t*)"Join Success\n", 14);
+    } else {
+      Serial.println("Échec du join.");
+      api.ble.uart.write((uint8_t*)"Join Failed\n", 13);
+    }
+  }
+}
+
+
+
 
 //--------------------------------
 // Main loop
@@ -197,11 +224,15 @@ void loop() {
         GetStatus();
       } else if (incoming == "RUN JoinStatus") {
         JoinStatus();
-      } else {
+      } else if (incoming == "RUN JoinRequest") {
+        JoinRequest();
+      }
+
+      else {
         Serial.println("Commande inconnue : " + incoming);
       }
 
-      incoming = "";  // Réinitialisation 
+      incoming = "";  // Réinitialisation
     } else {
       incoming += c;
     }
