@@ -76,7 +76,7 @@ const handleJoin = async () => {
       return;
     }
 
-    Alert.alert('Info', 'Requête Join envoyée, en attente de la réponse...');
+    Alert.alert('Info', 'Join request sent, waiting for response...');
 
     // Écoute une seule réponse
     const subscription = device.monitorCharacteristicForService(
