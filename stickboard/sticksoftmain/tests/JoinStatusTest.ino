@@ -10,9 +10,6 @@ void setup() {
 
   delay(100);
 
-  uint8_t pin[] = "123456";
-  api.ble.uart.setPIN(pin, 6);
-  api.ble.uart.setPermission(RAK_SET_ENC_WITH_MITM);
   api.ble.uart.start(0);
 }
 
