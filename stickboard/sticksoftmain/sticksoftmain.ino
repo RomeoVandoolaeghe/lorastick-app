@@ -190,8 +190,14 @@ void JoinRequest() {
   //sinon on join
   else {
     Serial.println("Envoi de la requête de join...");
-    api.lorawan.join();  // Envoi de la requête de join
-    delay(10000);         // Attente de 10 secondes pour le join
+    //wait for Join success
+    unsigned long startTime = millis(); 
+    const unsigned long timeout = 20000; // 20 secondes pour le join sinon echec
+
+    while (api.lorawan.njs.get() == 0 && (millis() - startTime < timeout)) {
+      api.lorawan.join(); // Envoi de la requête de join
+      delay(5000);
+    }
     if (api.lorawan.njs.get()) {
       Serial.println("Join réussi !");
       api.ble.uart.write((uint8_t*)"Join Success\n", 14);
@@ -201,6 +207,7 @@ void JoinRequest() {
     }
   }
 }
+
 
 
 
