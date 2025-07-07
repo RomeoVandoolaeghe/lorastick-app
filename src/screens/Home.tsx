@@ -38,7 +38,7 @@ export function HomePage({ device, demoMode = false, onBack }: { device: Device 
 
   let Content;
   if (selectedTab === 'device') {
-    Content = <DeviceMain selected={selectedTab} onTabChange={setSelectedTab} onDisconnect={onBack} />;
+    Content = <DeviceMain selected={selectedTab} onTabChange={setSelectedTab} onDisconnect={onBack} device={device} />;
   } else if (selectedTab === 'tests') {
     Content = <TestMain selected={selectedTab} onTabChange={setSelectedTab} device={device} demoMode={demoMode} />;
   } else if (selectedTab === 'files') {

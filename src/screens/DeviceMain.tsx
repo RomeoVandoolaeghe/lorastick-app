@@ -2,12 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Text, Switch, TouchableOpacity, Alert } from 'react-native';
 import { MenuTab } from '../common/BottomMenu';
 import { StorageService, DeviceBLEStatus } from '../services/storage';
+import { Buffer } from 'buffer'; // en haut du fichier si ce n’est pas déjà fait
+import { Device } from 'react-native-ble-plx'; // au cas où
 
 interface DeviceMainProps {
   selected: MenuTab;
   onTabChange: (tab: MenuTab) => void;
   onDisconnect?: () => void;
+  device: Device | null; // 👈 ajoute ça
 }
+
+
 
 const defaultDeviceInfo = {
   devEUI: '70B3D57ED0001234',
@@ -21,7 +26,7 @@ const defaultDeviceInfo = {
   txPower: '14 dBm',
 };
 
-const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDisconnect }) => {
+const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDisconnect, device }) => {
   const [adr, setAdr] = useState(defaultDeviceInfo.adr);
   const [adrChanged, setAdrChanged] = useState(false);
   const [bleStatus, setBleStatus] = useState<DeviceBLEStatus>('disconnected');
@@ -50,10 +55,51 @@ const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDiscon
     if (onDisconnect) onDisconnect();
   };
 
-  const handleJoin = () => {
-    // TODO: Implémenter l'envoi de la commande ATC+JOIN via BLE
-    Alert.alert('Join');
-  };
+const handleJoin = async () => {
+  if (!device) {
+    Alert.alert('Erreur', 'Aucun appareil connecté');
+    return;
+  }
+
+  try {
+    const services = await device.services();
+    const allChars = await Promise.all(
+      services.map(s => device.characteristicsForService(s.uuid))
+    );
+    const characteristics = allChars.flat();
+
+    const writeChar = characteristics.find(c => c.isWritableWithoutResponse);
+    const notifyChar = characteristics.find(c => c.isNotifiable);
+
+    if (!writeChar || !notifyChar) {
+      Alert.alert('Erreur', 'Caractéristiques BLE non trouvées');
+      return;
+    }
+
+    Alert.alert('Info', 'Requête Join envoyée, en attente de la réponse...');
+
+    // Écoute une seule réponse
+    const subscription = device.monitorCharacteristicForService(
+      notifyChar.serviceUUID,
+      notifyChar.uuid,
+      (error, characteristic) => {
+        if (error || !characteristic?.value) return;
+
+        const decoded = Buffer.from(characteristic.value, 'base64').toString('utf-8');
+        Alert.alert('Réponse du RAK4631', decoded.trim());
+        subscription.remove();
+      }
+    );
+
+    await device.writeCharacteristicWithoutResponseForService(
+      writeChar.serviceUUID,
+      writeChar.uuid,
+      Buffer.from('RUN JoinRequest\n', 'utf-8').toString('base64')
+    );
+  } catch (e: any) {
+    Alert.alert('Erreur', e.message || 'Échec de l\'envoi');
+  }
+};
 
   const getStatusColor = () => bleStatus === 'connected' ? '#4CAF50' : '#F44336';
   const getStatusText = () => bleStatus === 'connected' ? 'Connected' : 'Disconnected';
