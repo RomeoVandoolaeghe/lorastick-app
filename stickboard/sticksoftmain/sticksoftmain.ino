@@ -42,7 +42,7 @@ void setup() {
 void handleGenlinkCheck() {
   Serial.println("BLE cmd: GenLinkCheck, generate 100 LinkChecks sample and send to app");
 
-  for (int i = 0; i < 100; i++) {
+  // Envoi d'un seul LinkCheck
     LinkCheckData data;
     data.time = "2025-06-20 14:00:00";
     data.mode = 0;
@@ -59,7 +59,6 @@ void handleGenlinkCheck() {
 
     api.ble.uart.write((uint8_t*)payload.c_str(), payload.length());
     delay(20);
-  }
 
   Serial.println("✅ Envoi terminé");
 }
