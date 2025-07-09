@@ -317,20 +317,22 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
 
       {selectedMethod && !testMode && (
         <View style={styles.selectionCard}>
-          <View style={styles.bigSwitchRow}>
+          <View style={styles.verticalButtonGroup}>
             {['unit', 'realtime', 'periodic'].map(mode => (
               <TouchableOpacity
                 key={mode}
-                style={styles.bigSwitchButton}
+                style={styles.verticalButton}
                 onPress={() => setTestMode(mode as TestMode)}
               >
-                <Text style={styles.bigSwitchText}>
+                <Text style={styles.verticalButtonText}>
                   {mode.charAt(0).toUpperCase() + mode.slice(1)}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
+
+
       )}
 
 
@@ -488,6 +490,28 @@ const styles = StyleSheet.create({
   stopButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
   saveButton: { backgroundColor: '#34C759', borderRadius: 8, paddingVertical: 14, marginHorizontal: 24, marginTop: 12, alignItems: 'center', elevation: 2 },
   saveButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  verticalButtonGroup: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 12, // fonctionne avec React Native 0.71+, sinon utilise marginBottom dans chaque bouton
+  },
+
+  verticalButton: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 12,
+    paddingHorizontal: 40,
+    borderRadius: 8,
+    marginVertical: 6, // si `gap` ne marche pas
+    width: '80%',
+    alignItems: 'center',
+  },
+
+  verticalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+
 });
 
 export default TestMain;
