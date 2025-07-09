@@ -5,6 +5,7 @@ import {
   Text,
   TouchableOpacity,
   Alert,
+  ScrollView,
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { MenuTab } from '../common/BottomMenu';
@@ -17,6 +18,20 @@ interface TestMainProps {
   device: Device | null;
   demoMode?: boolean;
 }
+
+interface LinkCheckData {
+  time: string;
+  mode: number;
+  gateways: number;
+  latitude: number;
+  longitude: number;
+  rx_rssi: number;
+  rx_snr: number;
+  demod: number;
+  tx_dr: number;
+  lost_packets: number;
+}
+
 
 const testMethods = [
   { key: 'LinkCheck', icon: 'network-check', label: 'LinkCheck' },
@@ -37,16 +52,16 @@ const frequencySeconds = { '10s': 10, '30s': 30, '1min': 60 };
 type TestMethod = typeof testMethods[number]['key'];
 type Period = typeof periods[number];
 type Frequency = typeof frequencies[number]['key'];
-type TestMode = 'unit' | 'periodic' | 'realtime';
+type TestMode = 'unit' | 'periodic' | 'realtime' | null;
 
 const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) => {
   const [selectedMethod, setSelectedMethod] = useState<TestMethod | null>(null);
-  const [testMode, setTestMode] = useState<TestMode>('unit');
+  const [testMode, setTestMode] = useState<TestMode>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<Period>('1h');
   const [selectedFrequency, setSelectedFrequency] = useState<Frequency>('10s');
-  const [linkcheckResults, setLinkcheckResults] = useState<{ label: string; value: string }[]>([]);
+  const [linkcheckResults, setLinkcheckResults] = useState<LinkCheckData[]>([]);
   const [isRealtimeRunning, setIsRealtimeRunning] = useState(false);
-
+  const realtimeSubscriptionRef = useRef<ReturnType<Device['monitorCharacteristicForService']> | null>(null);
   const realtimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const unitSubscriptionRef = useRef<ReturnType<Device['monitorCharacteristicForService']> | null>(null);
 
@@ -84,14 +99,25 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
 
           const decoded = Buffer.from(characteristic.value, 'base64').toString('utf-8');
           if (decoded.startsWith('+LINKCHECK:')) {
-            const clean = decoded.trim();
-            unitSubscriptionRef.current?.remove();
-            unitSubscriptionRef.current = null;
-            setLinkcheckResults(prev => [
-              ...prev,
-              { label: `valeur${prev.length + 1}`, value: clean },
-            ]);
+            const clean = decoded.trim().replace('+LINKCHECK: ', '');
+            const [gateways, latitude, longitude, rx_rssi, rx_snr, demod, tx_dr, lost_packets] = clean.split(',').map(Number);
+
+            const newResult: LinkCheckData = {
+              time: new Date().toISOString(), // ou récupérée du device si fournie
+              mode: 0,
+              gateways,
+              latitude,
+              longitude,
+              rx_rssi,
+              rx_snr,
+              demod,
+              tx_dr,
+              lost_packets,
+            };
+
+            setLinkcheckResults(prev => [...prev, newResult]);
           }
+
         }
       );
 
@@ -129,7 +155,13 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
       return;
     }
 
-    device.monitorCharacteristicForService(
+    if (realtimeSubscriptionRef.current) {
+      realtimeSubscriptionRef.current.remove();
+      realtimeSubscriptionRef.current = null;
+    }
+
+
+    realtimeSubscriptionRef.current = device.monitorCharacteristicForService(
       notifyChar.serviceUUID,
       notifyChar.uuid,
       (error, characteristic) => {
@@ -137,12 +169,25 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
 
         const decoded = Buffer.from(characteristic.value, 'base64').toString('utf-8');
         if (decoded.startsWith('+LINKCHECK:')) {
-          const clean = decoded.trim();
-          setLinkcheckResults(prev => [
-            ...prev,
-            { label: `valeur${prev.length + 1}`, value: clean },
-          ]);
+          const clean = decoded.trim().replace('+LINKCHECK: ', '');
+          const [gateways, latitude, longitude, rx_rssi, rx_snr, demod, tx_dr, lost_packets] = clean.split(',').map(Number);
+
+          const newResult: LinkCheckData = {
+            time: new Date().toISOString(), // ou récupérée du device si fournie
+            mode: 0,
+            gateways,
+            latitude,
+            longitude,
+            rx_rssi,
+            rx_snr,
+            demod,
+            tx_dr,
+            lost_packets,
+          };
+
+          setLinkcheckResults(prev => [...prev, newResult]);
         }
+
       }
     );
 
@@ -153,7 +198,6 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
           writeChar.uuid,
           Buffer.from('RUN Genlinkcheck\n', 'utf-8').toString('base64')
         );
-        console.log('Commande RUN Genlinkcheck envoyée');
       } catch (e) {
         console.error('Erreur envoi Genlinkcheck:', e);
       }
@@ -170,6 +214,26 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
       realtimeIntervalRef.current = null;
     }
     setIsRealtimeRunning(false);
+
+    if (realtimeSubscriptionRef.current) {
+      realtimeSubscriptionRef.current.remove();
+      realtimeSubscriptionRef.current = null;
+    }
+  };
+
+  const handleRun = () => {
+    if (!selectedMethod || !testMode) return;
+
+    if (testMode === 'unit') {
+      runUnitTest();
+    } else if (testMode === 'realtime') {
+      isRealtimeRunning ? stopRealtimeMode() : startRealtimeMode();
+    } else if (testMode === 'periodic') {
+      const total = Math.floor(
+        periodSeconds[selectedPeriod] / frequencySeconds[selectedFrequency]
+      );
+      Alert.alert('Info', `Mode périodique : ${total} tests seront exécutés.`);
+    }
   };
 
   const handleSave = () => {
@@ -178,35 +242,17 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
       return;
     }
 
-    Alert.alert(
-      'Sauvegarde',
-      `${linkcheckResults.length} résultats enregistrés en mémoire.`
-    );
-  };
-
-  const handleRun = () => {
-    if (!selectedMethod) return;
-
-    if (testMode === 'periodic') {
-      const total = Math.floor(
-        periodSeconds[selectedPeriod] / frequencySeconds[selectedFrequency]
-      );
-      Alert.alert('Info', `Mode périodique : ${total} tests seront exécutés.`);
-    } else if (testMode === 'unit') {
-      runUnitTest();
-    } else if (testMode === 'realtime') {
-      if (isRealtimeRunning) {
-        stopRealtimeMode();
-      } else {
-        startRealtimeMode();
-      }
-    }
+    Alert.alert('Sauvegarde', `${linkcheckResults.length} résultats enregistrés en mémoire.`);
   };
 
   const resetResults = () => {
     setLinkcheckResults([]);
   };
 
+  const getMethodLabel = (key: TestMethod | null) => {
+    const method = testMethods.find(m => m.key === key);
+    return method ? method.label : '';
+  };
 
   useEffect(() => {
     return () => {
@@ -221,23 +267,31 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
     };
   }, []);
 
-  useEffect(() => {
-    if (selectedMethod === null && realtimeIntervalRef.current) {
-      clearInterval(realtimeIntervalRef.current);
-      realtimeIntervalRef.current = null;
-    }
-  }, [selectedMethod]);
 
-  const getMethodLabel = (key: TestMethod | null) => {
-    const method = testMethods.find(m => m.key === key);
-    return method ? method.label : '';
-  };
+
+  useEffect(() => {
+    // Stopper le mode realtime si on en sort
+    if (testMode !== 'realtime' && isRealtimeRunning) {
+      stopRealtimeMode();
+    }
+
+    // Réinitialiser les résultats quand on change de mode
+    setLinkcheckResults([]);
+
+    if (realtimeSubscriptionRef.current) {
+      realtimeSubscriptionRef.current.remove();
+      realtimeSubscriptionRef.current = null;
+    }
+
+  }, [testMode]);
+
+
 
   return (
     <View style={styles.container}>
       {selectedMethod ? (
         <View style={styles.headerRow}>
-          <TouchableOpacity onPress={() => setSelectedMethod(null)} style={styles.backButton}>
+          <TouchableOpacity onPress={() => { setSelectedMethod(null); setTestMode(null); }} style={styles.backButton}>
             <MaterialIcons name="arrow-back" size={28} color="#007AFF" />
           </TouchableOpacity>
           <Text style={styles.headerSelected}>{getMethodLabel(selectedMethod)}</Text>
@@ -246,7 +300,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
         <Text style={styles.header}>Select method</Text>
       )}
 
-      {selectedMethod === null && (
+      {!selectedMethod && (
         <View style={styles.cardRow}>
           {testMethods.map(method => (
             <TouchableOpacity
@@ -254,68 +308,36 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
               style={styles.methodCard}
               onPress={() => setSelectedMethod(method.key)}
             >
-              <MaterialIcons name={method.icon} size={32} color="#007AFF" style={styles.methodIcon} />
+              <MaterialIcons name={method.icon} size={32} color="#007AFF" />
               <Text style={styles.methodCardText}>{method.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
       )}
 
-      {selectedMethod && (
-        <>
-          <View style={styles.selectionCard}>
-            <View style={styles.bigSwitchRow}>
-              {['unit', 'periodic', 'realtime'].map(mode => (
-                <TouchableOpacity
-                  key={mode}
-                  style={[styles.bigSwitchButton, testMode === mode && styles.bigSwitchButtonActive]}
-                  onPress={() => setTestMode(mode as TestMode)}
-                >
-                  <Text style={[styles.bigSwitchText, testMode === mode && styles.bigSwitchTextActive]}>
-                    {mode.charAt(0).toUpperCase() + mode.slice(1)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            {testMode !== 'unit' && (
-              <View style={styles.frequencyRow}>
-                {frequencies.map(freq => (
-                  <TouchableOpacity
-                    key={freq.key}
-                    style={[styles.frequencyButton, selectedFrequency === freq.key && styles.frequencyButtonSelected]}
-                    onPress={() => setSelectedFrequency(freq.key)}
-                  >
-                    <Text style={[styles.frequencyButtonText, selectedFrequency === freq.key && styles.frequencyButtonTextSelected]}>
-                      {freq.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-
-            {testMode === 'periodic' && (
-              <>
-                <View style={styles.periodRow}>
-                  {periods.map(period => (
-                    <TouchableOpacity
-                      key={period}
-                      style={[styles.periodButton, selectedPeriod === period && styles.periodButtonSelected]}
-                      onPress={() => setSelectedPeriod(period)}
-                    >
-                      <Text style={[styles.periodButtonText, selectedPeriod === period && styles.periodButtonTextSelected]}>
-                        {period}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-                <Text style={styles.testCountText}>
-                  Total tests: {Math.floor(periodSeconds[selectedPeriod] / frequencySeconds[selectedFrequency])}
+      {selectedMethod && !testMode && (
+        <View style={styles.selectionCard}>
+          <View style={styles.bigSwitchRow}>
+            {['unit', 'realtime', 'periodic'].map(mode => (
+              <TouchableOpacity
+                key={mode}
+                style={styles.bigSwitchButton}
+                onPress={() => setTestMode(mode as TestMode)}
+              >
+                <Text style={styles.bigSwitchText}>
+                  {mode.charAt(0).toUpperCase() + mode.slice(1)}
                 </Text>
-              </>
-            )}
+              </TouchableOpacity>
+            ))}
           </View>
+        </View>
+      )}
 
+
+
+
+      {testMode && (
+        <>
           <TouchableOpacity
             style={isRealtimeRunning ? styles.stopButton : styles.runButton}
             onPress={handleRun}
@@ -325,26 +347,109 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
             </Text>
           </TouchableOpacity>
 
+          {testMode !== 'unit' && (
+            <View style={styles.frequencyRow}>
+              {frequencies.map(freq => (
+                <TouchableOpacity
+                  key={freq.key}
+                  style={[
+                    styles.frequencyButton,
+                    selectedFrequency === freq.key && styles.frequencyButtonSelected,
+                  ]}
+                  onPress={() => setSelectedFrequency(freq.key)}
+                >
+                  <Text
+                    style={[
+                      styles.frequencyButtonText,
+                      selectedFrequency === freq.key && styles.frequencyButtonTextSelected,
+                    ]}
+                  >
+                    {freq.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
 
-          {testMode === 'realtime' && (
+          {testMode === 'periodic' && (
+            <>
+              <View style={styles.periodRow}>
+                {periods.map(period => (
+                  <TouchableOpacity
+                    key={period}
+                    style={[
+                      styles.periodButton,
+                      selectedPeriod === period && styles.periodButtonSelected,
+                    ]}
+                    onPress={() => setSelectedPeriod(period)}
+                  >
+                    <Text
+                      style={[
+                        styles.periodButtonText,
+                        selectedPeriod === period && styles.periodButtonTextSelected,
+                      ]}
+                    >
+                      {period}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <Text style={styles.testCountText}>
+                Total tests: {Math.floor(periodSeconds[selectedPeriod] / frequencySeconds[selectedFrequency])}
+              </Text>
+            </>
+          )}
+
+          {(testMode === 'realtime' || testMode === 'unit') && (
             <>
               <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
                 <Text style={styles.saveButtonText}>Sauvegarder</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.stopButton} onPress={resetResults}>
-                <Text style={styles.stopButtonText}>Reset</Text>
-              </TouchableOpacity>
+
+              {testMode === 'realtime' && (
+                <TouchableOpacity style={styles.stopButton} onPress={resetResults}>
+                  <Text style={styles.stopButtonText}>Reset</Text>
+                </TouchableOpacity>
+              )}
             </>
           )}
+
+
           {linkcheckResults.length > 0 && (
-            <View style={{ marginTop: 20 }}>
-              <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 8 }}>Résultats reçus :</Text>
-              {linkcheckResults.slice(-10).map((res, idx) => (
-                <Text key={idx} style={{ fontSize: 14, color: '#333', marginBottom: 4 }}>
-                  valeur{idx + 1} : {res.value}
-                </Text>
-              ))}
-            </View>
+            <ScrollView style={{ marginTop: 20, maxHeight: 300 }}>
+              <ScrollView horizontal>
+                <View>
+                  <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 8 }}>
+                    Résultats LinkCheck :
+                  </Text>
+
+                  {/* En-têtes de colonnes */}
+                  <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: '#ccc', paddingBottom: 4 }}>
+                    <Text style={{ width: 100, fontWeight: 'bold', fontSize: 12 }}>LinkCheck</Text>
+                    {['Time', 'Mode', 'Gw', 'Lat', 'Lng', 'RX_RSSI', 'RX_SNR', 'Demod', 'TX_DR', 'Lost'].map((col, i) => (
+                      <Text key={i} style={{ width: 80, fontWeight: 'bold', fontSize: 12 }}>{col}</Text>
+                    ))}
+                  </View>
+
+                  {/* Lignes de données */}
+                  {linkcheckResults.map((res, idx) => (
+                    <View key={idx} style={{ flexDirection: 'row', borderBottomWidth: 0.5, borderColor: '#eee', paddingVertical: 4 }}>
+                      <Text style={{ width: 100, fontSize: 12 }}>{`LinkCheck ${idx + 1}`}</Text>
+                      <Text style={{ width: 80, fontSize: 12 }}>{res.time.slice(11, 19)}</Text>
+                      <Text style={{ width: 80, fontSize: 12 }}>{res.mode}</Text>
+                      <Text style={{ width: 80, fontSize: 12 }}>{res.gateways}</Text>
+                      <Text style={{ width: 80, fontSize: 12 }}>{res.latitude.toFixed(4)}</Text>
+                      <Text style={{ width: 80, fontSize: 12 }}>{res.longitude.toFixed(4)}</Text>
+                      <Text style={{ width: 80, fontSize: 12 }}>{res.rx_rssi}</Text>
+                      <Text style={{ width: 80, fontSize: 12 }}>{res.rx_snr}</Text>
+                      <Text style={{ width: 80, fontSize: 12 }}>{res.demod}</Text>
+                      <Text style={{ width: 80, fontSize: 12 }}>{res.tx_dr}</Text>
+                      <Text style={{ width: 80, fontSize: 12 }}>{res.lost_packets}</Text>
+                    </View>
+                  ))}
+                </View>
+              </ScrollView>
+            </ScrollView>
           )}
 
         </>
@@ -361,14 +466,11 @@ const styles = StyleSheet.create({
   headerSelected: { fontSize: 22, fontWeight: 'bold', color: '#222' },
   cardRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 },
   methodCard: { flex: 1, backgroundColor: '#fff', borderRadius: 12, padding: 18, marginHorizontal: 6, alignItems: 'center', elevation: 2, borderWidth: 1, borderColor: '#E0E0E0' },
-  methodIcon: { marginBottom: 8 },
   methodCardText: { fontSize: 16, color: '#007AFF', fontWeight: '600' },
   selectionCard: { backgroundColor: '#fff', borderRadius: 12, padding: 18, marginVertical: 18, elevation: 2, borderWidth: 1, borderColor: '#E0E0E0' },
   bigSwitchRow: { flexDirection: 'row', justifyContent: 'center', marginBottom: 18 },
   bigSwitchButton: { flex: 1, paddingVertical: 12, marginHorizontal: 8, borderRadius: 8, backgroundColor: '#F0F0F0', alignItems: 'center' },
-  bigSwitchButtonActive: { backgroundColor: '#007AFF' },
   bigSwitchText: { fontSize: 18, color: '#007AFF', fontWeight: '600' },
-  bigSwitchTextActive: { color: '#fff' },
   frequencyRow: { flexDirection: 'row', justifyContent: 'center', marginBottom: 12 },
   frequencyButton: { paddingVertical: 8, paddingHorizontal: 18, marginHorizontal: 6, borderRadius: 8, backgroundColor: '#F0F0F0' },
   frequencyButtonSelected: { backgroundColor: '#007AFF' },
