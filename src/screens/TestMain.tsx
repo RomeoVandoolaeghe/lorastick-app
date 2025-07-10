@@ -11,13 +11,10 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { MenuTab } from '../common/BottomMenu';
 import { Device } from 'react-native-ble-plx';
 import { Buffer } from 'buffer';
-import XLSX from 'xlsx';
-import RNFS from 'react-native-fs';
-import FileViewer from 'react-native-file-viewer';
-import { Platform } from 'react-native';
-import Share from 'react-native-share';
+import RNFS from 'react-native-fs'; // Importer react-native-fs pour la gestion des fichiers
+import Share from 'react-native-share';  // Importer react-native-share pour le partage de fichiers
 
-
+// Props pour le composant TestMain
 interface TestMainProps {
   selected: MenuTab;
   onTabChange: (tab: MenuTab) => void;
@@ -25,6 +22,8 @@ interface TestMainProps {
   demoMode?: boolean;
 }
 
+
+// Interface pour les données de LinkCheck
 interface LinkCheckData {
   time: string;
   mode: number;
@@ -38,13 +37,15 @@ interface LinkCheckData {
   lost_packets: number;
 }
 
-
+// Méthodes de test disponibles
 const testMethods = [
   { key: 'LinkCheck', icon: 'network-check', label: 'LinkCheck' },
   { key: 'P2P', icon: 'sync-alt', label: 'P2P' },
   { key: 'Device Mode', icon: 'settings-input-antenna', label: 'Device Mode' },
 ] as const;
 
+
+// Périodes et fréquences disponibles
 const periods = ['1h', '4h', '24h'] as const;
 const frequencies = [
   { key: '10s', label: '10s', value: 10 },
@@ -52,15 +53,22 @@ const frequencies = [
   { key: '1min', label: '1min', value: 60 },
 ] as const;
 
+
+// Durées en secondes pour les périodes et fréquences
 const periodSeconds = { '1h': 3600, '4h': 14400, '24h': 86400 };
 const frequencySeconds = { '10s': 10, '30s': 30, '1min': 60 };
 
+
+// Type pour les méthodes de test
 type TestMethod = typeof testMethods[number]['key'];
 type Period = typeof periods[number];
 type Frequency = typeof frequencies[number]['key'];
 type TestMode = 'unit' | 'periodic' | 'realtime' | null;
 
+
+
 const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) => {
+  // États pour gérer la sélection de méthode, mode de test, période, fréquence et résultats
   const [selectedMethod, setSelectedMethod] = useState<TestMethod | null>(null);
   const [testMode, setTestMode] = useState<TestMode>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<Period>('1h');
@@ -71,17 +79,20 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
   const realtimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const unitSubscriptionRef = useRef<ReturnType<Device['monitorCharacteristicForService']> | null>(null);
 
+  // Fonction pour exécuter le test unitaire LinkCheck
   const runUnitTest = async () => {
     if (!device) {
       Alert.alert('Erreur', 'Aucun appareil connecté');
       return;
     }
 
+    // Nettoyer les anciennes subscriptions
     if (unitSubscriptionRef.current) {
       unitSubscriptionRef.current.remove();
       unitSubscriptionRef.current = null;
     }
 
+    // Vérifier les services et caractéristiques du device
     try {
       const services = await device.services();
       const allChars = await Promise.all(
@@ -96,6 +107,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
         Alert.alert('Erreur', 'Caractéristiques non trouvées');
         return;
       }
+
 
       unitSubscriptionRef.current = device.monitorCharacteristicForService(
         notifyChar.serviceUUID,
@@ -137,6 +149,8 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
     }
   };
 
+
+  // Fonction pour démarrer le mode temps réel
   const startRealtimeMode = async () => {
     if (!device) {
       Alert.alert('Erreur', 'Aucun appareil connecté');
@@ -197,6 +211,8 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
       }
     );
 
+
+    // Fonction pour envoyer la commande RUN Genlinkcheck
     const sendLinkCheck = async () => {
       try {
         await device.writeCharacteristicWithoutResponseForService(
@@ -214,6 +230,8 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
     setIsRealtimeRunning(true);
   };
 
+
+  // Fonction pour arrêter le mode temps réel
   const stopRealtimeMode = () => {
     if (realtimeIntervalRef.current) {
       clearInterval(realtimeIntervalRef.current);
@@ -227,6 +245,8 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
     }
   };
 
+
+  // Fonction pour gérer l'exécution du test en fonction du mode sélectionné
   const handleRun = () => {
     if (!selectedMethod || !testMode) return;
 
@@ -242,21 +262,17 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
     }
   };
 
-  const handleSave = () => {
-    if (linkcheckResults.length === 0) {
-      Alert.alert('Sauvegarde', 'Aucune donnée à sauvegarder.');
-      return;
-    }
-
-    Alert.alert('Sauvegarde', `${linkcheckResults.length} résultats enregistrés en mémoire.`);
-  };
 
 
+
+  // Fonction pour obtenir le label d'une méthode de test à partir de sa clé
   const getMethodLabel = (key: TestMethod | null) => {
     const method = testMethods.find(m => m.key === key);
     return method ? method.label : '';
   };
 
+
+  // Effet pour nettoyer les subscriptions et intervals à la désactivation du composant
   useEffect(() => {
     return () => {
       if (realtimeIntervalRef.current) {
@@ -271,7 +287,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
   }, []);
 
 
-
+  // Effet pour gérer le changement de mode de test
   useEffect(() => {
     // Stopper le mode realtime si on en sort
     if (testMode !== 'realtime' && isRealtimeRunning) {
@@ -290,7 +306,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
   }, [testMode]);
 
 
-
+  // Fonction pour exporter les résultats LinkCheck en CSV
   const handleExportCSV = async (linkcheckResults: LinkCheckData[]) => {
     try {
       if (!linkcheckResults || linkcheckResults.length === 0) {
