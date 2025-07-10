@@ -20,6 +20,11 @@ yarn start
 
 ## Step 2: Build and run your app
 
+> **Important**: Before running your app, decide whether you need **BLE (Bluetooth Low Energy)** functionality or just want to test the basic app features.
+> 
+> - **For BLE development**: Use a **physical device** (recommended) as BLE features may not work reliably in emulators/simulators.
+> - **For general testing without BLE**: You can use an **emulator/simulator**. For Android, open Android Studio and click **"More Actions"** → **"Virtual Device Manager"** to create and start an Android Virtual Device (AVD).
+
 With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
 
 ### Android
