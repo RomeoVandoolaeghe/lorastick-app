@@ -157,6 +157,13 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
       return;
     }
 
+    //Nettoyer l'abonnement du mode unit si encore actif
+    if (unitSubscriptionRef.current) {
+      unitSubscriptionRef.current.remove();
+      unitSubscriptionRef.current = null;
+    }
+
+    // Nettoyer l'intervalle précédent s'il existe
     if (realtimeIntervalRef.current) {
       clearInterval(realtimeIntervalRef.current);
     }
@@ -179,7 +186,6 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
       realtimeSubscriptionRef.current.remove();
       realtimeSubscriptionRef.current = null;
     }
-
 
     realtimeSubscriptionRef.current = device.monitorCharacteristicForService(
       notifyChar.serviceUUID,
@@ -289,98 +295,128 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
 
   // Effet pour gérer le changement de mode de test
   useEffect(() => {
-    // Stopper le mode realtime si on en sort
     if (testMode !== 'realtime' && isRealtimeRunning) {
       stopRealtimeMode();
     }
 
-    // Réinitialiser les résultats quand on change de mode
-    setLinkcheckResults([]);
-
-    // Nettoyer la subscription realtime si on change de mode
     if (realtimeSubscriptionRef.current) {
       realtimeSubscriptionRef.current.remove();
       realtimeSubscriptionRef.current = null;
     }
 
+    if (unitSubscriptionRef.current) {
+      unitSubscriptionRef.current.remove();
+      unitSubscriptionRef.current = null;
+    }
   }, [testMode]);
 
 
+
+
   // Fonction pour exporter les résultats LinkCheck en CSV
-  const handleExportCSV = async (linkcheckResults: LinkCheckData[]) => {
+  const saveCSVToFile = async (linkcheckResults: LinkCheckData[]): Promise<string | null> => {
+    if (!linkcheckResults.length) {
+      Alert.alert('Aucun résultat', 'Aucune donnée à sauvegarder.');
+      return null;
+    }
+
     try {
-      if (!linkcheckResults || linkcheckResults.length === 0) {
-        Alert.alert('Aucun résultat', 'Aucune donnée à exporter.');
-        return;
-      }
-
-      // 1. En-tête CSV
       const headers = [
-        'LinkCheck',
-        'Time',
-        'Mode',
-        'Gateways',
-        'Latitude',
-        'Longitude',
-        'RX_RSSI',
-        'RX_SNR',
-        'Demod',
-        'TX_DR',
-        'LostPackets'
+        'LinkCheck', 'Time', 'Mode', 'Gateways', 'Latitude', 'Longitude',
+        'RX_RSSI', 'RX_SNR', 'Demod', 'TX_DR', 'LostPackets'
       ];
-
-      // 2. Lignes de données
       const rows = linkcheckResults.map((res, i) => [
-        `LinkCheck ${i + 1}`,
-        res.time,
-        res.mode,
-        res.gateways,
-        res.latitude,
-        res.longitude,
-        res.rx_rssi,
-        res.rx_snr,
-        res.demod,
-        res.tx_dr,
-        res.lost_packets
+        `LinkCheck ${i + 1}`, res.time, res.mode, res.gateways, res.latitude,
+        res.longitude, res.rx_rssi, res.rx_snr, res.demod, res.tx_dr, res.lost_packets
       ]);
 
-      // 3. Construction CSV (séparateur virgule)
-      const csvContent = [
-        headers.join(','),
-        ...rows.map(row => row.join(','))
-      ].join('\n');
-
-      // 4. Chemin du fichier
+      const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
       const filePath = `${RNFS.DownloadDirectoryPath}/linkcheck_results_${Date.now()}.csv`;
 
-      // 5. Écriture dans le fichier
+      await RNFS.writeFile(filePath, csvContent, 'utf8');
+      Alert.alert('Succès', 'Fichier enregistré dans le dossier Téléchargements.');
+      return filePath;
+    } catch (e) {
+      Alert.alert('Erreur', 'Impossible de sauvegarder le fichier.');
+      return null;
+    }
+  };
+
+  const shareCSVFile = async (linkcheckResults: LinkCheckData[]) => {
+    if (!linkcheckResults.length) {
+      Alert.alert('Aucun résultat', 'Aucune donnée à sauvegarder.');
+      return null;
+    }
+
+    try {
+      const headers = [
+        'LinkCheck', 'Time', 'Mode', 'Gateways', 'Latitude', 'Longitude',
+        'RX_RSSI', 'RX_SNR', 'Demod', 'TX_DR', 'LostPackets'
+      ];
+      const rows = linkcheckResults.map((res, i) => [
+        `LinkCheck ${i + 1}`, res.time, res.mode, res.gateways, res.latitude,
+        res.longitude, res.rx_rssi, res.rx_snr, res.demod, res.tx_dr, res.lost_packets
+      ]);
+
+      const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+
+      // 🔄 Créer un fichier temporaire dans le dossier cache
+      const filePath = `${RNFS.CachesDirectoryPath}/linkcheck_temp_${Date.now()}.csv`;
+
       await RNFS.writeFile(filePath, csvContent, 'utf8');
 
-      // 6. Partage via une app compatible (Excel, Sheets, etc.)
+      // 📤 Partager le fichier sans l’enregistrer dans le dossier Téléchargements
       await Share.open({
         url: 'file://' + filePath,
         type: 'text/csv',
-        title: 'Ouvrir le fichier CSV',
-        message: 'Voici les résultats LinkCheck',
+        title: 'Partager LinkCheck CSV',
         failOnCancel: false,
       });
 
+      // Optionnel : supprimer le fichier après le partage
+      // await RNFS.unlink(filePath);
 
-    } catch (error: any) {
-      console.error('Erreur export CSV :', error);
-      Alert.alert('Erreur', "Impossible d'exporter le fichier CSV.");
+    } catch (error) {
+      console.error('Erreur partage CSV :', error);
+      Alert.alert('Erreur', 'Impossible de partager le fichier.');
     }
   };
+
+
+
+  const getModeLabel = () => {
+    if (testMode === 'unit') return 'Unit Test';
+    if (testMode === 'realtime') return 'RealTime Test';
+    if (testMode === 'periodic') return 'Periodic Test';
+    return '';
+  };
+
+
 
   return (
     <View style={styles.container}>
       {selectedMethod ? (
-        <View style={styles.headerRow}>
-          <TouchableOpacity onPress={() => { setSelectedMethod(null); setTestMode(null); }} style={styles.backButton}>
-            <MaterialIcons name="arrow-back" size={28} color="#007AFF" />
-          </TouchableOpacity>
-          <Text style={styles.headerSelected}>{getMethodLabel(selectedMethod)}</Text>
+        <View style={styles.headerContainer}>
+          <View style={styles.headerRow}>
+            <TouchableOpacity
+              onPress={() => {
+                setSelectedMethod(null);
+                setTestMode(null);
+                setLinkcheckResults([]); // 👈 Vider les résultats au retour
+              }}
+              style={styles.backButton}
+            >
+              <MaterialIcons name="arrow-back" size={28} color="#007AFF" />
+            </TouchableOpacity>
+
+
+            <View style={styles.headerTextGroup}>
+              <Text style={styles.headerSelected}>{getMethodLabel(selectedMethod)}</Text>
+              <Text style={styles.subHeader}>{getModeLabel()}</Text>
+            </View>
+          </View>
         </View>
+
       ) : (
         <Text style={styles.header}>Select method</Text>
       )}
@@ -425,38 +461,46 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
 
       {testMode && (
         <>
-          <TouchableOpacity
-            style={isRealtimeRunning ? styles.stopButton : styles.runButton}
-            onPress={handleRun}
-          >
-            <Text style={isRealtimeRunning ? styles.stopButtonText : styles.runButtonText}>
-              {isRealtimeRunning ? 'Stop' : 'Run'}
-            </Text>
-          </TouchableOpacity>
+          {testMode && (
+            <>
+              {testMode === 'realtime' && (
+                <>
+                  <View style={styles.frequencyRow}>
+                    {frequencies.map(freq => (
+                      <TouchableOpacity
+                        key={freq.key}
+                        style={[
+                          styles.frequencyButton,
+                          selectedFrequency === freq.key && styles.frequencyButtonSelected,
+                        ]}
+                        onPress={() => setSelectedFrequency(freq.key)}
+                      >
+                        <Text
+                          style={[
+                            styles.frequencyButtonText,
+                            selectedFrequency === freq.key && styles.frequencyButtonTextSelected,
+                          ]}
+                        >
+                          {freq.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </>
+              )}
 
-          {testMode !== 'unit' && (
-            <View style={styles.frequencyRow}>
-              {frequencies.map(freq => (
-                <TouchableOpacity
-                  key={freq.key}
-                  style={[
-                    styles.frequencyButton,
-                    selectedFrequency === freq.key && styles.frequencyButtonSelected,
-                  ]}
-                  onPress={() => setSelectedFrequency(freq.key)}
-                >
-                  <Text
-                    style={[
-                      styles.frequencyButtonText,
-                      selectedFrequency === freq.key && styles.frequencyButtonTextSelected,
-                    ]}
-                  >
-                    {freq.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+              {/* ✅ Bouton Run affiché pour tous les modes */}
+              <TouchableOpacity
+                style={isRealtimeRunning ? styles.stopButton : styles.runButton}
+                onPress={handleRun}
+              >
+                <Text style={isRealtimeRunning ? styles.stopButtonText : styles.runButtonText}>
+                  {isRealtimeRunning ? 'Stop' : 'Run'}
+                </Text>
+              </TouchableOpacity>
+            </>
           )}
+
 
           {testMode === 'periodic' && (
             <>
@@ -489,9 +533,17 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
 
           {(testMode === 'realtime' || testMode === 'unit') && (
             <>
-              <TouchableOpacity style={styles.saveButton} onPress={() => handleExportCSV(linkcheckResults)}>
-                <Text style={styles.saveButtonText}>Exporter CSV</Text>
-              </TouchableOpacity>
+              <View style={styles.actionRow}>
+                <TouchableOpacity style={styles.saveButtonWide} onPress={() => saveCSVToFile(linkcheckResults)}>
+                  <Text style={styles.saveButtonText}>Save as file</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.shareButtonSquare} onPress={() => shareCSVFile(linkcheckResults)}>
+                  <MaterialIcons name="share" size={24} color="#fff" />
+                </TouchableOpacity>
+              </View>
+
+
 
             </>
           )}
@@ -549,7 +601,7 @@ const styles = StyleSheet.create({
   cardRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 },
   methodCard: { flex: 1, backgroundColor: '#fff', borderRadius: 12, padding: 18, marginHorizontal: 6, alignItems: 'center', elevation: 2, borderWidth: 1, borderColor: '#E0E0E0' },
   methodCardText: { fontSize: 16, color: '#007AFF', fontWeight: '600' },
-  selectionCard: { backgroundColor: '#fff', borderRadius: 12, padding: 18, marginVertical: 18, elevation: 2, borderWidth: 1, borderColor: '#E0E0E0' },
+  selectionCard: { backgroundColor: '#fff', borderRadius: 12, padding: 18, marginVertical: -20, elevation: 5, borderWidth: 1, borderColor: '#E0E0E0' },
   bigSwitchRow: { flexDirection: 'row', justifyContent: 'center', marginBottom: 18 },
   bigSwitchButton: { flex: 1, paddingVertical: 12, marginHorizontal: 8, borderRadius: 8, backgroundColor: '#F0F0F0', alignItems: 'center' },
   bigSwitchText: { fontSize: 18, color: '#007AFF', fontWeight: '600' },
@@ -581,7 +633,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 40,
     borderRadius: 8,
-    marginVertical: 6, // si `gap` ne marche pas
+    marginVertical: 6,
     width: '80%',
     alignItems: 'center',
   },
@@ -591,6 +643,77 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  headerContainer: {
+    marginBottom: 18,
+  },
+
+  subHeaderText: {
+    fontSize: 16,
+    color: '#666',
+    marginLeft: 36, // pour aligner avec le titre (après flèche)
+    marginTop: 4,
+  },
+  headerTextGroup: {
+    flexDirection: 'column',
+    justifyContent: 'center',
+  },
+
+  subHeader: {
+    fontSize: 15,
+    color: '#666',
+    marginTop: 0, // pas de marge inutile
+  },
+  shareButton: {
+    backgroundColor: '#007AFF',
+    borderRadius: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    marginHorizontal: 24,
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  shareButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 24,
+    marginTop: 12,
+  },
+
+  saveButtonWide: {
+    flex: 1,
+    backgroundColor: '#34C759',
+    borderRadius: 8,
+    paddingVertical: 14,
+    alignItems: 'center',
+    elevation: 2,
+  },
+
+  shareButtonSquare: {
+    width: 52,
+    height: 52,
+    backgroundColor: '#34C759',
+    borderRadius: 8,
+    marginLeft: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+  },
+
+
+
+
+
+
+
 
 });
 
