@@ -11,6 +11,12 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { MenuTab } from '../common/BottomMenu';
 import { Device } from 'react-native-ble-plx';
 import { Buffer } from 'buffer';
+import XLSX from 'xlsx';
+import RNFS from 'react-native-fs';
+import FileViewer from 'react-native-file-viewer';
+import { Platform } from 'react-native';
+import Share from 'react-native-share';
+
 
 interface TestMainProps {
   selected: MenuTab;
@@ -245,9 +251,6 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
     Alert.alert('Sauvegarde', `${linkcheckResults.length} résultats enregistrés en mémoire.`);
   };
 
-  const resetResults = () => {
-    setLinkcheckResults([]);
-  };
 
   const getMethodLabel = (key: TestMethod | null) => {
     const method = testMethods.find(m => m.key === key);
@@ -278,6 +281,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
     // Réinitialiser les résultats quand on change de mode
     setLinkcheckResults([]);
 
+    // Nettoyer la subscription realtime si on change de mode
     if (realtimeSubscriptionRef.current) {
       realtimeSubscriptionRef.current.remove();
       realtimeSubscriptionRef.current = null;
@@ -286,6 +290,71 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
   }, [testMode]);
 
 
+
+  const handleExportCSV = async (linkcheckResults: LinkCheckData[]) => {
+    try {
+      if (!linkcheckResults || linkcheckResults.length === 0) {
+        Alert.alert('Aucun résultat', 'Aucune donnée à exporter.');
+        return;
+      }
+
+      // 1. En-tête CSV
+      const headers = [
+        'LinkCheck',
+        'Time',
+        'Mode',
+        'Gateways',
+        'Latitude',
+        'Longitude',
+        'RX_RSSI',
+        'RX_SNR',
+        'Demod',
+        'TX_DR',
+        'LostPackets'
+      ];
+
+      // 2. Lignes de données
+      const rows = linkcheckResults.map((res, i) => [
+        `LinkCheck ${i + 1}`,
+        res.time,
+        res.mode,
+        res.gateways,
+        res.latitude,
+        res.longitude,
+        res.rx_rssi,
+        res.rx_snr,
+        res.demod,
+        res.tx_dr,
+        res.lost_packets
+      ]);
+
+      // 3. Construction CSV (séparateur virgule)
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.join(','))
+      ].join('\n');
+
+      // 4. Chemin du fichier
+      const filePath = `${RNFS.DownloadDirectoryPath}/linkcheck_results_${Date.now()}.csv`;
+
+      // 5. Écriture dans le fichier
+      await RNFS.writeFile(filePath, csvContent, 'utf8');
+
+      // 6. Partage via une app compatible (Excel, Sheets, etc.)
+      await Share.open({
+        url: 'file://' + filePath,
+        type: 'text/csv',
+        title: 'Ouvrir le fichier CSV',
+        message: 'Voici les résultats LinkCheck',
+        failOnCancel: false,
+      });
+
+
+    } catch (error: any) {
+      console.error('Erreur export CSV :', error);
+      Alert.alert('Erreur', "Impossible d'exporter le fichier CSV.");
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -404,15 +473,10 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
 
           {(testMode === 'realtime' || testMode === 'unit') && (
             <>
-              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                <Text style={styles.saveButtonText}>Sauvegarder</Text>
+              <TouchableOpacity style={styles.saveButton} onPress={() => handleExportCSV(linkcheckResults)}>
+                <Text style={styles.saveButtonText}>Exporter CSV</Text>
               </TouchableOpacity>
 
-              {testMode === 'realtime' && (
-                <TouchableOpacity style={styles.stopButton} onPress={resetResults}>
-                  <Text style={styles.stopButtonText}>Reset</Text>
-                </TouchableOpacity>
-              )}
             </>
           )}
 

@@ -52,6 +52,30 @@
         }
       }
     },
+    "react-native-file-viewer": {
+      "root": "C:\\Users\\Chris\\OneDrive\\Bureau\\PILOT THINGS\\LoraStick\\lorastick\\node_modules\\react-native-file-viewer",
+      "name": "react-native-file-viewer",
+      "platforms": {
+        "ios": {
+          "podspecPath": "C:\\Users\\Chris\\OneDrive\\Bureau\\PILOT THINGS\\LoraStick\\lorastick\\node_modules\\react-native-file-viewer\\RNFileViewer.podspec",
+          "version": "2.1.5",
+          "configurations": [],
+          "scriptPhases": []
+        },
+        "android": {
+          "sourceDir": "C:\\Users\\Chris\\OneDrive\\Bureau\\PILOT THINGS\\LoraStick\\lorastick\\node_modules\\react-native-file-viewer\\android",
+          "packageImportPath": "import com.vinzscam.reactnativefileviewer.RNFileViewerPackage;",
+          "packageInstance": "new RNFileViewerPackage()",
+          "buildTypes": [],
+          "componentDescriptors": [],
+          "cmakeListsPath": "C:/Users/Chris/OneDrive/Bureau/PILOT THINGS/LoraStick/lorastick/node_modules/react-native-file-viewer/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cxxModuleCMakeListsModuleName": null,
+          "cxxModuleCMakeListsPath": null,
+          "cxxModuleHeaderName": null,
+          "isPureCxxDependency": false
+        }
+      }
+    },
     "react-native-fs": {
       "root": "C:\\Users\\Chris\\OneDrive\\Bureau\\PILOT THINGS\\LoraStick\\lorastick\\node_modules\\react-native-fs",
       "name": "react-native-fs",

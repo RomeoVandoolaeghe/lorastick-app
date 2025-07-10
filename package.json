@@ -15,9 +15,11 @@
     "react": "19.1.0",
     "react-native": "0.80.0",
     "react-native-ble-plx": "^2.0.3",
+    "react-native-file-viewer": "^2.1.5",
     "react-native-fs": "^2.20.0",
     "react-native-share": "^12.1.0",
-    "react-native-vector-icons": "^10.2.0"
+    "react-native-vector-icons": "^10.2.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
