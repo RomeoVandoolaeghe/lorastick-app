@@ -40,7 +40,7 @@ interface LinkCheckData {
 // Méthodes de test disponibles
 const testMethods = [
   { key: 'LinkCheck', icon: 'network-check', label: 'LinkCheck' },
-  { key: 'P2P', icon: 'sync-alt', label: 'P2P' },
+  // { key: 'P2P', icon: 'sync-alt', label: 'P2P' },
   { key: 'Device Mode', icon: 'settings-input-antenna', label: 'Device Mode' },
 ] as const;
 
@@ -78,6 +78,53 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
   const realtimeSubscriptionRef = useRef<ReturnType<Device['monitorCharacteristicForService']> | null>(null);
   const realtimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const unitSubscriptionRef = useRef<ReturnType<Device['monitorCharacteristicForService']> | null>(null);
+  const [networkMode, setNetworkMode] = useState<'lorawan' | 'p2p'>('lorawan');
+
+
+  const checkLoraMode = async () => {
+    if (!device) return;
+
+    const services = await device.services();
+    const allChars = await Promise.all(
+      services.map(s => device.characteristicsForService(s.uuid))
+    );
+    const characteristics = allChars.flat();
+
+    const writeChar = characteristics.find(c => c.isWritableWithoutResponse);
+    const notifyChar = characteristics.find(c => c.isNotifiable);
+
+    if (!writeChar || !notifyChar) return;
+
+    return new Promise<string>((resolve, reject) => {
+      const subscription = device.monitorCharacteristicForService(
+        notifyChar.serviceUUID,
+        notifyChar.uuid,
+        (error, characteristic) => {
+          if (error || !characteristic?.value) {
+            subscription.remove();
+            return reject(error);
+          }
+
+          const decoded = Buffer.from(characteristic.value, 'base64').toString('utf-8');
+          if (decoded.startsWith("MODE=")) {
+            const mode = decoded.split("=")[1].trim();
+            subscription.remove();
+            resolve(mode);  // "0", "1", etc.
+          }
+        }
+      );
+
+      device.writeCharacteristicWithoutResponseForService(
+        writeChar.serviceUUID,
+        writeChar.uuid,
+        Buffer.from('RUN Mode\n', 'utf-8').toString('base64')
+      );
+    });
+  };
+
+
+
+
 
   // Fonction pour exécuter le test unitaire LinkCheck
   const runUnitTest = async () => {
@@ -391,6 +438,19 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
     return '';
   };
 
+  useEffect(() => {
+    if (!device) return;
+
+    checkLoraMode().then(mode => {
+      if (mode === "1") {
+        setNetworkMode("lorawan");
+      } else if (mode === "0") {
+        setNetworkMode("p2p");
+      }
+    });
+  }, [device]);
+
+
 
 
   return (
@@ -400,15 +460,17 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
           <View style={styles.headerRow}>
             <TouchableOpacity
               onPress={() => {
-                setSelectedMethod(null);
-                setTestMode(null);
-                setLinkcheckResults([]); // 👈 Vider les résultats au retour
+                if (testMode) {
+                  setTestMode(null);
+                } else {
+                  setSelectedMethod(null);
+                }
+                setLinkcheckResults([]);
               }}
               style={styles.backButton}
             >
               <MaterialIcons name="arrow-back" size={28} color="#007AFF" />
             </TouchableOpacity>
-
 
             <View style={styles.headerTextGroup}>
               <Text style={styles.headerSelected}>{getMethodLabel(selectedMethod)}</Text>
@@ -416,10 +478,14 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
             </View>
           </View>
         </View>
-
       ) : (
-        <Text style={styles.header}>Select method</Text>
+        <View style={styles.headerContainer}>
+          <Text style={styles.header}>
+            {networkMode === 'lorawan' ? 'LoRaWAN Mode' : networkMode === 'p2p' ? 'P2P Mode' : 'Checking mode...'}
+          </Text>
+        </View>
       )}
+
 
       {!selectedMethod && (
         <View style={styles.cardRow}>
@@ -489,15 +555,18 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
                 </>
               )}
 
-              {/* ✅ Bouton Run affiché pour tous les modes */}
-              <TouchableOpacity
-                style={isRealtimeRunning ? styles.stopButton : styles.runButton}
-                onPress={handleRun}
-              >
-                <Text style={isRealtimeRunning ? styles.stopButtonText : styles.runButtonText}>
-                  {isRealtimeRunning ? 'Stop' : 'Run'}
-                </Text>
-              </TouchableOpacity>
+              {/* ✅ Bouton Run seulement pour les modes unit et realtime */}
+              {(testMode === 'unit' || testMode === 'realtime') && (
+                <TouchableOpacity
+                  style={isRealtimeRunning ? styles.stopButton : styles.runButton}
+                  onPress={handleRun}
+                >
+                  <Text style={isRealtimeRunning ? styles.stopButtonText : styles.runButtonText}>
+                    {isRealtimeRunning ? 'Stop' : 'Run'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+
             </>
           )}
 
@@ -525,9 +594,18 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
                   </TouchableOpacity>
                 ))}
               </View>
+
               <Text style={styles.testCountText}>
                 Total tests: {Math.floor(periodSeconds[selectedPeriod] / frequencySeconds[selectedFrequency])}
               </Text>
+
+              {/* 👇 Ajoute ce bouton ici pour le placer juste après les fréquences */}
+              <TouchableOpacity
+                style={styles.runButton}
+                onPress={handleRun}
+              >
+                <Text style={styles.runButtonText}>Run</Text>
+              </TouchableOpacity>
             </>
           )}
 

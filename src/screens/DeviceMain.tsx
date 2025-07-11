@@ -30,6 +30,20 @@ const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDiscon
   const [adr, setAdr] = useState(defaultDeviceInfo.adr);
   const [adrChanged, setAdrChanged] = useState(false);
   const [bleStatus, setBleStatus] = useState<DeviceBLEStatus>('disconnected');
+  const [isP2PMode, setIsP2PMode] = useState(false);
+  const [p2pConfig, setP2PConfig] = useState<null | {
+    freq: string;
+    sf: string;
+    bw: string;
+    cr: string;
+    preamble: string;
+    txpower: string;
+    crc: string;
+    iq: string;
+  }>(null);
+
+
+
 
   useEffect(() => {
     const loadBLEStatus = async () => {
@@ -39,15 +53,7 @@ const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDiscon
     loadBLEStatus();
   }, []);
 
-  const handleAdrToggle = (value: boolean) => {
-    setAdr(value);
-    setAdrChanged(value !== defaultDeviceInfo.adr);
-  };
 
-  const handleSend = () => {
-    // TODO: Envoyer la configuration à l'appareil
-    Alert.alert('Configuration', 'Configuration envoyée au LoRaStick (TODO)');
-  };
 
   const handleDisconnect = async () => {
     await StorageService.setDeviceBLEStatus('disconnected');
@@ -76,30 +82,126 @@ const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDiscon
         return;
       }
 
-      Alert.alert('Info', 'Join request sent, waiting for response...');
+      // Étape 1 : Envoyer "RUN GetMode"
+      const modePromise = new Promise<string>((resolve, reject) => {
+        const subscription = device.monitorCharacteristicForService(
+          notifyChar.serviceUUID,
+          notifyChar.uuid,
+          (error, characteristic) => {
+            if (error || !characteristic?.value) {
+              reject('Erreur de lecture BLE');
+              return;
+            }
 
-      // Écoute une seule réponse
+            const decoded = Buffer.from(characteristic.value, 'base64').toString('utf-8').trim();
+
+            if (decoded.startsWith('MODE=')) {
+              resolve(decoded);
+              subscription.remove();
+            }
+          }
+        );
+      });
+
+      await device.writeCharacteristicWithoutResponseForService(
+        writeChar.serviceUUID,
+        writeChar.uuid,
+        Buffer.from('RUN Mode\n', 'utf-8').toString('base64')
+      );
+
+      // Étape 2 : Attendre la réponse "MODE=1"
+      const response = await modePromise;
+
+      if (response === 'MODE=1') {
+        // Envoi du JoinRequest
+        Alert.alert('Info', 'Join request sent, waiting for response...');
+
+        const joinSubscription = device.monitorCharacteristicForService(
+          notifyChar.serviceUUID,
+          notifyChar.uuid,
+          (error, characteristic) => {
+            if (error || !characteristic?.value) return;
+
+            const decoded = Buffer.from(characteristic.value, 'base64').toString('utf-8');
+            Alert.alert('Réponse du RAK4631', decoded.trim());
+            joinSubscription.remove();
+          }
+        );
+
+        await device.writeCharacteristicWithoutResponseForService(
+          writeChar.serviceUUID,
+          writeChar.uuid,
+          Buffer.from('RUN JoinRequest\n', 'utf-8').toString('base64')
+        );
+      } else {
+        Alert.alert('Erreur', 'Le device n\'est pas en mode LoRaWAN');
+      }
+    } catch (e: any) {
+      Alert.alert('Erreur', e.message || 'Échec de l\'envoi');
+    }
+  };
+
+
+
+  const handleGetP2P = async () => {
+    if (!device) return;
+
+    try {
+      const services = await device.services();
+      const allChars = await Promise.all(
+        services.map(s => device.characteristicsForService(s.uuid))
+      );
+      const characteristics = allChars.flat();
+
+      const writeChar = characteristics.find(c => c.isWritableWithoutResponse);
+      const notifyChar = characteristics.find(c => c.isNotifiable);
+      if (!writeChar || !notifyChar) return;
+
+      // Subscription pour recevoir la réponse GetP2P
       const subscription = device.monitorCharacteristicForService(
         notifyChar.serviceUUID,
         notifyChar.uuid,
         (error, characteristic) => {
           if (error || !characteristic?.value) return;
+          const decoded = Buffer.from(characteristic.value, 'base64').toString('utf-8').trim();
 
-          const decoded = Buffer.from(characteristic.value, 'base64').toString('utf-8');
-          Alert.alert('Réponse du RAK4631', decoded.trim());
+          if (decoded.startsWith("P2P:")) {
+            const raw = decoded.replace("P2P:", "").trim();
+            const [freq, sf, bw, cr, preamble, txpower, crc, iq] = raw.split(",");
+            setP2PConfig({
+              freq,
+              sf,
+              bw,
+              cr,
+              preamble,
+              txpower,
+              crc,
+              iq,
+            });
+          }
+
           subscription.remove();
         }
       );
 
+      // Envoi de la commande BLE
       await device.writeCharacteristicWithoutResponseForService(
         writeChar.serviceUUID,
         writeChar.uuid,
-        Buffer.from('RUN JoinRequest\n', 'utf-8').toString('base64')
+        Buffer.from('RUN GetP2P\n', 'utf-8').toString('base64')
       );
     } catch (e: any) {
-      Alert.alert('Erreur', e.message || 'Échec de l\'envoi');
+      console.warn('GetP2P failed', e.message);
     }
   };
+
+
+  useEffect(() => {
+    handleGetP2P(); // récupère toujours au montage
+  }, []);
+
+
+
 
   const getStatusColor = () => bleStatus === 'connected' ? '#4CAF50' : '#F44336';
   const getStatusText = () => bleStatus === 'connected' ? 'Connected' : 'Disconnected';
@@ -118,24 +220,55 @@ const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDiscon
         </TouchableOpacity>
       </View>
 
+      <View style={styles.statusSubCard}>
+        <View style={styles.infoRow}>
+          <Text style={styles.label}>Network server</Text>
+          <TouchableOpacity style={styles.joinButton} onPress={handleJoin}>
+            <Text style={styles.joinButtonText}>Join</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+
       {/* LoRaWAN Section */}
       <View style={styles.card}>
-        <Text style={styles.header}>LoRaWAN</Text>
-
-        {/* Network Server Join Button */}
-        <View style={styles.statusSubCard}>
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Network server</Text>
-            <TouchableOpacity style={styles.joinButton} onPress={handleJoin}>
-              <Text style={styles.joinButtonText}>Join</Text>
-            </TouchableOpacity>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <Text style={styles.header}>{isP2PMode ? 'LoRa P2P' : 'LoRaWAN'}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Switch
+              value={isP2PMode}
+              onValueChange={(val) => setIsP2PMode(val)}
+            />
           </View>
         </View>
 
-        <InfoRow label="DevEUI" value={defaultDeviceInfo.devEUI} />
-        <InfoRow label="AppEUI" value={defaultDeviceInfo.appEUI} />
-        <InfoRow label="AppKey" value={defaultDeviceInfo.appKey} />
-        <InfoRow label="LoRaWAN Region & Band" value={`${defaultDeviceInfo.region} / ${defaultDeviceInfo.band}`} />
+
+
+        {isP2PMode ? (
+          <>
+            {p2pConfig && (
+              <View>
+                <InfoRow label="Freq (Hz)" value={p2pConfig.freq} />
+                <InfoRow label="Spreading Factor" value={p2pConfig.sf} />
+                <InfoRow label="Bandwidth" value={p2pConfig.bw} />
+                <InfoRow label="Coding Rate" value={p2pConfig.cr} />
+                <InfoRow label="Preamble Length" value={p2pConfig.preamble} />
+                <InfoRow label="Tx Power (dBm)" value={p2pConfig.txpower} />
+                <InfoRow label="Encryption Mode is enabled" value={p2pConfig.crc === 'true' ? 'Yes' : 'No'} />
+                <InfoRow label="P2P FSK modem bitrate" value={p2pConfig.iq} />
+              </View>
+            )}
+
+          </>
+        ) : (
+
+          <>
+            <InfoRow label="DevEUI" value={defaultDeviceInfo.devEUI} />
+            <InfoRow label="AppEUI" value={defaultDeviceInfo.appEUI} />
+            <InfoRow label="AppKey" value={defaultDeviceInfo.appKey} />
+            <InfoRow label="LoRaWAN Region & Band" value={`${defaultDeviceInfo.region} / ${defaultDeviceInfo.band}`} />
+          </>
+        )}
       </View>
     </ScrollView>
   );
@@ -167,7 +300,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   statusSubCard: {
-    backgroundColor: '#f3f8fd',
+    backgroundColor: '#c2e1ffff',
     borderRadius: 10,
     padding: 12,
     marginBottom: 18,

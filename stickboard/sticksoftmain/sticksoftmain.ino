@@ -34,42 +34,32 @@ void setup() {
 // Immplemented BLE commands
 //--------------------------------
 
-
-
-
-
 /////////////handleGenlinkCheck()////////////////////////////
 void handleGenlinkCheck() {
   Serial.println("BLE cmd: GenLinkCheck, generate 100 LinkChecks sample and send to app");
 
   // Envoi d'un seul LinkCheck
-    LinkCheckData data;
-    data.time = "2025-06-20 14:00:00";
-    data.mode = 0;
-    data.gateways = random(1, 5);
-    data.latitude = 14.0 + random(0, 1000000) / 1000000.0;
-    data.longitude = 121.0 + random(0, 1000000) / 1000000.0;
-    data.rx_rssi = -1 * random(70, 120);
-    data.rx_snr = random(0, 10);
-    data.demod = random(0, 32);
-    data.tx_dr = random(0, 10);
-    data.lost_packets = random(0, 3);
+  LinkCheckData data;
+  data.time = "2025-06-20 14:00:00";
+  data.mode = 0;
+  data.gateways = random(1, 5);
+  data.latitude = 14.0 + random(0, 1000000) / 1000000.0;
+  data.longitude = 121.0 + random(0, 1000000) / 1000000.0;
+  data.rx_rssi = -1 * random(70, 120);
+  data.rx_snr = random(0, 10);
+  data.demod = random(0, 32);
+  data.tx_dr = random(0, 10);
+  data.lost_packets = random(0, 3);
 
-    String payload = "+LINKCHECK: " + String(data.gateways) + "," + String(data.latitude, 6) + "," + String(data.longitude, 6) + "," + String(data.rx_rssi) + "," + String(data.rx_snr) + "," + String(data.demod) + "," + String(data.tx_dr) + "," + String(data.lost_packets) + "\n";
+  String payload = "+LINKCHECK: " + String(data.gateways) + "," + String(data.latitude, 6) + "," + String(data.longitude, 6) + "," + String(data.rx_rssi) + "," + String(data.rx_snr) + "," + String(data.demod) + "," + String(data.tx_dr) + "," + String(data.lost_packets) + "\n";
 
-    api.ble.uart.write((uint8_t*)payload.c_str(), payload.length());
-    delay(20);
+  api.ble.uart.write((uint8_t *)payload.c_str(), payload.length());
+  delay(20);
 
   Serial.println("✅ Envoi terminé");
 }
 //--------------------------------
 // not used ?
-
-
-
-
-
-
 
 ////////////////handleGetFile()////////////////////////////////
 void handleGetFile() {
@@ -78,18 +68,16 @@ void handleGetFile() {
   for (int i = 0; i < 100; i++) {
     String line = String(random(1, 5)) + "," + String(14.0 + random(0, 1000000) / 1000000.0, 6) + "," + String(121.0 + random(0, 1000000) / 1000000.0, 6) + "," + String(-1 * random(70, 120)) + "," + String(random(0, 10)) + "," + String(random(0, 32)) + "," + String(random(0, 10)) + "," + String(random(0, 3)) + "\n";
 
-    api.ble.uart.write((uint8_t*)line.c_str(), line.length());
+    api.ble.uart.write((uint8_t *)line.c_str(), line.length());
     delay(10);  // Ajustable
   }
 
   // Marque la fin du fichier
   String eof = "EOF\n";
-  api.ble.uart.write((uint8_t*)eof.c_str(), eof.length());
+  api.ble.uart.write((uint8_t *)eof.c_str(), eof.length());
 
   Serial.println("✅ Fichier simulé envoyé avec succès");
 }
-
-
 
 ///////JoinStatus()///////////////////
 void JoinStatus() {
@@ -104,10 +92,8 @@ void JoinStatus() {
     msg = "+STATUS:NOT_JOINED\n";
   }
 
-  api.ble.uart.write((uint8_t*)msg.c_str(), msg.length());
+  api.ble.uart.write((uint8_t *)msg.c_str(), msg.length());
 }
-
-
 
 ///////////GetStatus()///////////////////////////
 void GetStatus() {
@@ -122,7 +108,8 @@ void GetStatus() {
     if (api.lorawan.deui.get(buf, len)) {
       msg += "DevEUI: ";
       for (int i = 0; i < len; i++) {
-        if (buf[i] < 16) msg += "0";
+        if (buf[i] < 16)
+          msg += "0";
         msg += String(buf[i], HEX);
       }
       msg += "\n";
@@ -138,7 +125,8 @@ void GetStatus() {
     if (api.lorawan.appeui.get(buf, len)) {
       msg += "AppEUI: ";
       for (int i = 0; i < len; i++) {
-        if (buf[i] < 16) msg += "0";
+        if (buf[i] < 16)
+          msg += "0";
         msg += String(buf[i], HEX);
       }
       msg += "\n";
@@ -154,7 +142,8 @@ void GetStatus() {
     if (api.lorawan.appkey.get(buf, len)) {
       msg += "AppKey: ";
       for (int i = 0; i < len; i++) {
-        if (buf[i] < 16) msg += "0";
+        if (buf[i] < 16)
+          msg += "0";
         msg += String(buf[i], HEX);
       }
       msg += "\n";
@@ -170,11 +159,9 @@ void GetStatus() {
   msg += "\n";
 
   // === Envoi BLE + affichage console
-  api.ble.uart.write((uint8_t*)msg.c_str(), msg.length());
+  api.ble.uart.write((uint8_t *)msg.c_str(), msg.length());
   Serial.print(msg);
 }
-
-
 
 ///////////// JoinRequest() command///////////////
 void JoinRequest() {
@@ -183,28 +170,69 @@ void JoinRequest() {
   // Vérification si le join est déjà effectué
   if (api.lorawan.njs.get()) {
     Serial.println("Déjà connecté au réseau LoRaWAN.");
-    api.ble.uart.write((uint8_t*)"Already Joined\n");
+    api.ble.uart.write((uint8_t *)"Already Joined\n");
   }
 
-  //sinon on join
+  // sinon on join
   else {
     Serial.println("Envoi de la requête de join...");
-    //wait for Join success
-    unsigned long startTime = millis(); 
-    const unsigned long timeout = 20000; // 20 secondes pour le join sinon echec
+    // wait for Join success
+    unsigned long startTime = millis();
+    const unsigned long timeout = 20000;  // 20 secondes pour le join sinon echec
 
     while (api.lorawan.njs.get() == 0 && (millis() - startTime < timeout)) {
-      api.lorawan.join(); // Envoi de la requête de join
+      api.lorawan.join();  // Envoi de la requête de join
       delay(5000);
     }
     if (api.lorawan.njs.get()) {
       Serial.println("Join réussi !");
-      api.ble.uart.write((uint8_t*)"Join Success\n", 14);
+      api.ble.uart.write((uint8_t *)"Join Success\n", 14);
     } else {
       Serial.println("Échec du join.");
-      api.ble.uart.write((uint8_t*)"Join Failed\n", 13);
+      api.ble.uart.write((uint8_t *)"Join Failed\n", 13);
     }
   }
+}
+
+/////////////GetMode() command///////////////
+void GetMode() {
+  api.lorawan.nwm.set();
+  Serial.println("BLE cmd: GetMode");
+  int mode = api.lora.nwm.get();
+  Serial.println(mode);
+  String response = "MODE=" + String(mode);  // ex: "MODE=1"
+  api.ble.uart.write((uint8_t *)response.c_str(), response.length());
+}
+
+
+/////////////////GetP2P() command///////////////
+void GetP2P() {
+  uint32_t frequency = api.lora.pfreq.get();
+  uint32_t spreadingFactor = api.lora.psf.get();
+  uint32_t bandwidth = api.lora.pbw.get();
+  uint32_t codingRate = api.lora.pcr.get();
+  uint16_t preambleLength = api.lora.ppl.get();
+  uint8_t power = api.lora.ptp.get();
+  bool encryptionEnabled = api.lora.encry.get();
+  uint32_t bitrate = api.lora.pbr.get();
+
+  String Frequency = String(frequency);
+  String SpreadingFactor = String(spreadingFactor);
+  String Bandwidth = String(bandwidth);
+  String CodingRate = String(codingRate);
+  String PreambleLength = String(preambleLength);
+  String Power = String(power);
+  String EncryptionEnabled = encryptionEnabled ? "true" : "false";
+  String Bitrate = String(bitrate);
+  String response = "P2P: " + Frequency + "," + SpreadingFactor + "," + Bandwidth + "," + CodingRate + "," + PreambleLength + "," + Power + "," + EncryptionEnabled + "," + Bitrate + "\n";
+  Serial.println("BLE cmd: GetP2P");
+  Serial.println(response);
+  api.ble.uart.write((uint8_t *)response.c_str(), response.length());
+
+
+
+
+
 }
 
 
@@ -232,6 +260,10 @@ void loop() {
         JoinStatus();
       } else if (incoming == "RUN JoinRequest") {
         JoinRequest();
+      } else if (incoming == "RUN Mode") {
+        GetMode();
+      } else if (incoming == "RUN GetP2P"){
+        GetP2P();
       }
 
       else {
