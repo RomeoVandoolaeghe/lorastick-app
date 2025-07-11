@@ -13,6 +13,10 @@ import { Device } from 'react-native-ble-plx';
 import { Buffer } from 'buffer';
 import RNFS from 'react-native-fs'; // Importer react-native-fs pour la gestion des fichiers
 import Share from 'react-native-share';  // Importer react-native-share pour le partage de fichiers
+import { StorageService } from '../services/storage';
+import styles from './TestMain.styles.ts';
+import { saveCSVToFile, shareCSVFile, LinkCheckRecord } from '../services/csvUtils';
+import { checkLoraMode } from '../services/bleService';
 
 // Props pour le composant TestMain
 interface TestMainProps {
@@ -22,20 +26,6 @@ interface TestMainProps {
   demoMode?: boolean;
 }
 
-
-// Interface pour les données de LinkCheck
-interface LinkCheckData {
-  time: string;
-  mode: number;
-  gateways: number;
-  latitude: number;
-  longitude: number;
-  rx_rssi: number;
-  rx_snr: number;
-  demod: number;
-  tx_dr: number;
-  lost_packets: number;
-}
 
 // Méthodes de test disponibles
 const testMethods = [
@@ -73,61 +63,80 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
   const [testMode, setTestMode] = useState<TestMode>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<Period>('1h');
   const [selectedFrequency, setSelectedFrequency] = useState<Frequency>('10s');
-  const [linkcheckResults, setLinkcheckResults] = useState<LinkCheckData[]>([]);
+  const [linkcheckResults, setLinkcheckResults] = useState<LinkCheckRecord[]>([]);
   const [isRealtimeRunning, setIsRealtimeRunning] = useState(false);
   const realtimeSubscriptionRef = useRef<ReturnType<Device['monitorCharacteristicForService']> | null>(null);
   const realtimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const unitSubscriptionRef = useRef<ReturnType<Device['monitorCharacteristicForService']> | null>(null);
   const [networkMode, setNetworkMode] = useState<'lorawan' | 'p2p'>('lorawan');
+  const [demoModeEnabled, setDemoModeEnabled] = useState(false);
 
 
-  const checkLoraMode = async () => {
-    if (!device) return;
-
-    const services = await device.services();
-    const allChars = await Promise.all(
-      services.map(s => device.characteristicsForService(s.uuid))
-    );
-    const characteristics = allChars.flat();
-
-    const writeChar = characteristics.find(c => c.isWritableWithoutResponse);
-    const notifyChar = characteristics.find(c => c.isNotifiable);
-
-    if (!writeChar || !notifyChar) return;
-
-    return new Promise<string>((resolve, reject) => {
-      const subscription = device.monitorCharacteristicForService(
-        notifyChar.serviceUUID,
-        notifyChar.uuid,
-        (error, characteristic) => {
-          if (error || !characteristic?.value) {
-            subscription.remove();
-            return reject(error);
-          }
-
-          const decoded = Buffer.from(characteristic.value, 'base64').toString('utf-8');
-          if (decoded.startsWith("MODE=")) {
-            const mode = decoded.split("=")[1].trim();
-            subscription.remove();
-            resolve(mode);  // "0", "1", etc.
-          }
-        }
-      );
-
-      device.writeCharacteristicWithoutResponseForService(
-        writeChar.serviceUUID,
-        writeChar.uuid,
-        Buffer.from('RUN Mode\n', 'utf-8').toString('base64')
-      );
-    });
-  };
+  useEffect(() => {
+    const loadDemoMode = async () => {
+      const enabled = await StorageService.isDemoModeEnabled();
+      setDemoModeEnabled(enabled);
+    };
+    loadDemoMode();
+  }, []);
 
 
-
+  // Sample data for demo mode
+  const demoSamples: LinkCheckRecord[] = [
+    {
+      time: new Date(Date.now() - 60000).toISOString(),
+      mode: 0,
+      gateways: 2,
+      latitude: 48.8566,
+      longitude: 2.3522,
+      rx_rssi: -85,
+      rx_snr: 7.2,
+      demod: 1,
+      tx_dr: 5,
+      lost_packets: 0,
+    },
+    {
+      time: new Date(Date.now() - 30000).toISOString(),
+      mode: 0,
+      gateways: 3,
+      latitude: 48.8570,
+      longitude: 2.3530,
+      rx_rssi: -90,
+      rx_snr: 6.8,
+      demod: 1,
+      tx_dr: 5,
+      lost_packets: 1,
+    },
+    {
+      time: new Date().toISOString(),
+      mode: 0,
+      gateways: 1,
+      latitude: 48.8580,
+      longitude: 2.3540,
+      rx_rssi: -80,
+      rx_snr: 8.0,
+      demod: 1,
+      tx_dr: 5,
+      lost_packets: 0,
+    },
+  ];
 
 
   // Fonction pour exécuter le test unitaire LinkCheck
   const runUnitTest = async () => {
+    if (demoModeEnabled) {
+      // Add one more sample value each time Run is clicked
+      setLinkcheckResults(prev => {
+        const nextIndex = prev.length;
+        if (nextIndex < demoSamples.length) {
+          return [...prev, demoSamples[nextIndex]];
+        } else {
+          // If all samples are shown, cycle or keep adding the last one
+          return [...prev, demoSamples[demoSamples.length - 1]];
+        }
+      });
+      return;
+    }
     if (!device) {
       Alert.alert('Erreur', 'Aucun appareil connecté');
       return;
@@ -167,7 +176,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
             const clean = decoded.trim().replace('+LINKCHECK: ', '');
             const [gateways, latitude, longitude, rx_rssi, rx_snr, demod, tx_dr, lost_packets] = clean.split(',').map(Number);
 
-            const newResult: LinkCheckData = {
+            const newResult: LinkCheckRecord = {
               time: new Date().toISOString(), // ou récupérée du device si fournie
               mode: 0,
               gateways,
@@ -245,7 +254,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
           const clean = decoded.trim().replace('+LINKCHECK: ', '');
           const [gateways, latitude, longitude, rx_rssi, rx_snr, demod, tx_dr, lost_packets] = clean.split(',').map(Number);
 
-          const newResult: LinkCheckData = {
+          const newResult: LinkCheckRecord = {
             time: new Date().toISOString(), // ou récupérée du device si fournie
             mode: 0,
             gateways,
@@ -361,73 +370,74 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
 
 
   // Fonction pour exporter les résultats LinkCheck en CSV
-  const saveCSVToFile = async (linkcheckResults: LinkCheckData[]): Promise<string | null> => {
-    if (!linkcheckResults.length) {
-      Alert.alert('Aucun résultat', 'Aucune donnée à sauvegarder.');
-      return null;
-    }
+  // This function is now imported from csvUtils
+  // const saveCSVToFile = async (linkcheckResults: LinkCheckData[]): Promise<string | null> => {
+  //   if (!linkcheckResults.length) {
+  //     Alert.alert('Aucun résultat', 'Aucune donnée à sauvegarder.');
+  //     return null;
+  //   }
 
-    try {
-      const headers = [
-        'LinkCheck', 'Time', 'Mode', 'Gateways', 'Latitude', 'Longitude',
-        'RX_RSSI', 'RX_SNR', 'Demod', 'TX_DR', 'LostPackets'
-      ];
-      const rows = linkcheckResults.map((res, i) => [
-        `LinkCheck ${i + 1}`, res.time, res.mode, res.gateways, res.latitude,
-        res.longitude, res.rx_rssi, res.rx_snr, res.demod, res.tx_dr, res.lost_packets
-      ]);
+  //   try {
+  //     const headers = [
+  //       '#', 'Time', 'Mode', 'Gateways', 'Latitude', 'Longitude',
+  //       'RX_RSSI', 'RX_SNR', 'Demod', 'TX_DR', 'LostPackets'
+  //     ];
+  //     const rows = linkcheckResults.map((res, i) => [
+  //       i + 1, res.time, res.mode, res.gateways, res.latitude,
+  //       res.longitude, res.rx_rssi, res.rx_snr, res.demod, res.tx_dr, res.lost_packets
+  //     ]);
 
-      const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-      const filePath = `${RNFS.DownloadDirectoryPath}/linkcheck_results_${Date.now()}.csv`;
+  //     const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  //     const filePath = `${RNFS.DownloadDirectoryPath}/linkcheck_results_${Date.now()}.csv`;
 
-      await RNFS.writeFile(filePath, csvContent, 'utf8');
-      Alert.alert('Succès', 'Fichier enregistré dans le dossier Téléchargements.');
-      return filePath;
-    } catch (e) {
-      Alert.alert('Erreur', 'Impossible de sauvegarder le fichier.');
-      return null;
-    }
-  };
+  //     await RNFS.writeFile(filePath, csvContent, 'utf8');
+  //     Alert.alert('Succès', 'Fichier enregistré dans le dossier Téléchargements.');
+  //     return filePath;
+  //   } catch (e) {
+  //     Alert.alert('Erreur', 'Impossible de sauvegarder le fichier.');
+  //     return null;
+  //   }
+  // };
 
-  const shareCSVFile = async (linkcheckResults: LinkCheckData[]) => {
-    if (!linkcheckResults.length) {
-      Alert.alert('Aucun résultat', 'Aucune donnée à sauvegarder.');
-      return null;
-    }
+  // const shareCSVFile = async (linkcheckResults: LinkCheckData[]) => {
+  //   if (!linkcheckResults.length) {
+  //     Alert.alert('Aucun résultat', 'Aucune donnée à sauvegarder.');
+  //     return null;
+  //   }
 
-    try {
-      const headers = [
-        'LinkCheck', 'Time', 'Mode', 'Gateways', 'Latitude', 'Longitude',
-        'RX_RSSI', 'RX_SNR', 'Demod', 'TX_DR', 'LostPackets'
-      ];
-      const rows = linkcheckResults.map((res, i) => [
-        `LinkCheck ${i + 1}`, res.time, res.mode, res.gateways, res.latitude,
-        res.longitude, res.rx_rssi, res.rx_snr, res.demod, res.tx_dr, res.lost_packets
-      ]);
+  //   try {
+  //     const headers = [
+  //       '#', 'Time', 'Mode', 'Gateways', 'Latitude', 'Longitude',
+  //       'RX_RSSI', 'RX_SNR', 'Demod', 'TX_DR', 'LostPackets'
+  //     ];
+  //     const rows = linkcheckResults.map((res, i) => [
+  //       i + 1, res.time, res.mode, res.gateways, res.latitude,
+  //       res.longitude, res.rx_rssi, res.rx_snr, res.demod, res.tx_dr, res.lost_packets
+  //     ]);
 
-      const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  //     const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
 
-      // 🔄 Créer un fichier temporaire dans le dossier cache
-      const filePath = `${RNFS.CachesDirectoryPath}/linkcheck_temp_${Date.now()}.csv`;
+  //     // 🔄 Créer un fichier temporaire dans le dossier cache
+  //     const filePath = `${RNFS.CachesDirectoryPath}/linkcheck_temp_${Date.now()}.csv`;
 
-      await RNFS.writeFile(filePath, csvContent, 'utf8');
+  //     await RNFS.writeFile(filePath, csvContent, 'utf8');
 
-      // 📤 Partager le fichier sans l’enregistrer dans le dossier Téléchargements
-      await Share.open({
-        url: 'file://' + filePath,
-        type: 'text/csv',
-        title: 'Partager LinkCheck CSV',
-        failOnCancel: false,
-      });
+  //     // 📤 Partager le fichier sans l’enregistrer dans le dossier Téléchargements
+  //     await Share.open({
+  //       url: 'file://' + filePath,
+  //       type: 'text/csv',
+  //       title: 'Partager LinkCheck CSV',
+  //       failOnCancel: false,
+  //     });
 
-      // Optionnel : supprimer le fichier après le partage
-      // await RNFS.unlink(filePath);
+  //     // Optionnel : supprimer le fichier après le partage
+  //     // await RNFS.unlink(filePath);
 
-    } catch (error) {
-      console.error('Erreur partage CSV :', error);
-      Alert.alert('Erreur', 'Impossible de partager le fichier.');
-    }
-  };
+  //   } catch (error) {
+  //     console.error('Erreur partage CSV :', error);
+  //     Alert.alert('Erreur', 'Impossible de partager le fichier.');
+  //   }
+  // };
 
 
 
@@ -475,7 +485,13 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
             </TouchableOpacity>
             <Text style={styles.headerSelected}>{getMethodLabel(selectedMethod)}</Text>
           </View>
-          <Text style={styles.subHeader}>{getModeLabel()}</Text>
+          {/* Centralized subtitle for Unit Test mode */}
+          {testMode === 'unit' && (
+            <Text style={styles.unitSubtitle}>Unit Test</Text>
+          )}
+          {testMode !== 'unit' && (
+            <Text style={styles.subHeader}>{getModeLabel()}</Text>
+          )}
         </View>
       ) : (
         <View style={styles.headerContainer}>
@@ -623,16 +639,12 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
 
 
           {linkcheckResults.length > 0 && (
-            <ScrollView style={{ marginTop: 20, maxHeight: 300 }}>
+            <ScrollView style={{ marginTop: 20 }} contentContainerStyle={{ flexGrow: 1 }} ref={ref => { if (ref) ref.scrollTo({ y: 0, animated: false }); }}>
               <ScrollView horizontal>
                 <View>
-                  <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 8 }}>
-                    Résultats LinkCheck :
-                  </Text>
-
                   {/* En-têtes de colonnes */}
-                  <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: '#ccc', paddingBottom: 4 }}>
-                    <Text style={{ width: 100, fontWeight: 'bold', fontSize: 12 }}>LinkCheck</Text>
+                  <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: '#ccc', paddingBottom: 1, marginBottom: 2 }}>
+                    <Text style={{ width: 50, fontWeight: 'bold', fontSize: 12 }}>#</Text>
                     {['Time', 'Mode', 'Gw', 'Lat', 'Lng', 'RX_RSSI', 'RX_SNR', 'Demod', 'TX_DR', 'Lost'].map((col, i) => (
                       <Text key={i} style={{ width: 80, fontWeight: 'bold', fontSize: 12 }}>{col}</Text>
                     ))}
@@ -641,7 +653,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
                   {/* Lignes de données */}
                   {linkcheckResults.map((res, idx) => (
                     <View key={idx} style={{ flexDirection: 'row', borderBottomWidth: 0.5, borderColor: '#eee', paddingVertical: 4 }}>
-                      <Text style={{ width: 100, fontSize: 12 }}>{`LinkCheck ${idx + 1}`}</Text>
+                      <Text style={{ width: 50, fontSize: 12 }}>{idx + 1}</Text>
                       <Text style={{ width: 80, fontSize: 12 }}>{res.time.slice(11, 19)}</Text>
                       <Text style={{ width: 80, fontSize: 12 }}>{res.mode}</Text>
                       <Text style={{ width: 80, fontSize: 12 }}>{res.gateways}</Text>
@@ -664,130 +676,5 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F7F8FA', padding: 16 },
-  header: { fontSize: 22, fontWeight: 'bold', marginBottom: 18, textAlign: 'center', color: '#222' },
-  headerRow: { flexDirection: 'row', alignItems: 'center', minHeight: 48, marginBottom: 18 },
-  backButton: { marginRight: 8, justifyContent: 'center', alignItems: 'center' },
-  headerSelected: { fontSize: 28, fontWeight: 'bold', color: '#222', lineHeight: 28 },
-  cardRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 },
-  methodCard: { flex: 1, backgroundColor: '#fff', borderRadius: 12, padding: 18, marginHorizontal: 6, alignItems: 'center', elevation: 2, borderWidth: 1, borderColor: '#E0E0E0' },
-  methodCardText: { fontSize: 16, color: '#007AFF', fontWeight: '600' },
-  selectionCard: { backgroundColor: '#fff', borderRadius: 12, padding: 18, marginVertical: -20, elevation: 5, borderWidth: 1, borderColor: '#E0E0E0' },
-  bigSwitchRow: { flexDirection: 'row', justifyContent: 'center', marginBottom: 18 },
-  bigSwitchButton: { flex: 1, paddingVertical: 12, marginHorizontal: 8, borderRadius: 8, backgroundColor: '#F0F0F0', alignItems: 'center' },
-  bigSwitchText: { fontSize: 18, color: '#007AFF', fontWeight: '600' },
-  frequencyRow: { flexDirection: 'row', justifyContent: 'center', marginBottom: 12 },
-  frequencyButton: { paddingVertical: 8, paddingHorizontal: 18, marginHorizontal: 6, borderRadius: 8, backgroundColor: '#F0F0F0' },
-  frequencyButtonSelected: { backgroundColor: '#007AFF' },
-  frequencyButtonText: { fontSize: 16, color: '#007AFF', fontWeight: '500' },
-  frequencyButtonTextSelected: { color: '#fff' },
-  periodRow: { flexDirection: 'row', justifyContent: 'center', marginBottom: 12 },
-  periodButton: { paddingVertical: 8, paddingHorizontal: 18, marginHorizontal: 6, borderRadius: 8, backgroundColor: '#F0F0F0' },
-  periodButtonSelected: { backgroundColor: '#007AFF' },
-  periodButtonText: { fontSize: 16, color: '#007AFF', fontWeight: '500' },
-  periodButtonTextSelected: { color: '#fff' },
-  testCountText: { textAlign: 'center', fontSize: 16, marginTop: 8, color: '#222', fontWeight: '500' },
-  runButton: { backgroundColor: '#007AFF', borderRadius: 8, paddingVertical: 14, marginHorizontal: 24, marginTop: 12, alignItems: 'center', elevation: 2 },
-  runButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-  stopButton: { backgroundColor: '#FF3B30', borderRadius: 8, paddingVertical: 14, marginHorizontal: 24, marginTop: 12, alignItems: 'center', elevation: 2 },
-  stopButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-  saveButton: { backgroundColor: '#34C759', borderRadius: 8, paddingVertical: 14, marginHorizontal: 24, marginTop: 12, alignItems: 'center', elevation: 2 },
-  saveButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-  verticalButtonGroup: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 12, // fonctionne avec React Native 0.71+, sinon utilise marginBottom dans chaque bouton
-  },
-
-  verticalButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 12,
-    paddingHorizontal: 40,
-    borderRadius: 8,
-    marginVertical: 6,
-    width: '80%',
-    alignItems: 'center',
-  },
-
-  verticalButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  headerContainer: {
-    marginBottom: 18,
-  },
-
-  subHeaderText: {
-    fontSize: 16,
-    color: '#666',
-    marginLeft: 36, // pour aligner avec le titre (après flèche)
-    marginTop: 4,
-  },
-  headerTextGroup: {
-    flexDirection: 'column',
-    justifyContent: 'center',
-  },
-
-  subHeader: {
-    fontSize: 15,
-    color: '#666',
-    marginTop: 0, // pas de marge inutile
-  },
-  shareButton: {
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    marginHorizontal: 24,
-    marginTop: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  shareButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  actionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 24,
-    marginTop: 12,
-  },
-
-  saveButtonWide: {
-    flex: 1,
-    backgroundColor: '#34C759',
-    borderRadius: 8,
-    paddingVertical: 14,
-    alignItems: 'center',
-    elevation: 2,
-  },
-
-  shareButtonSquare: {
-    width: 52,
-    height: 52,
-    backgroundColor: '#34C759',
-    borderRadius: 8,
-    marginLeft: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 2,
-  },
-
-
-
-
-
-
-
-
-});
 
 export default TestMain;
