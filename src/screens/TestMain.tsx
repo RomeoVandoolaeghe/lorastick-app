@@ -18,6 +18,7 @@ import styles from './TestMain.styles.ts';
 import { saveCSVToFile, shareCSVFile, LinkCheckRecord } from '../services/csvUtils';
 import { checkLoraMode } from '../services/bleService';
 import { demoSamples } from './TestMainDemosample';
+import TestMainUnit from './TestMainUnit';
 
 // Props pour le composant TestMain
 interface TestMainProps {
@@ -336,7 +337,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
   useEffect(() => {
     if (!device) return;
 
-    checkLoraMode().then(mode => {
+    checkLoraMode(device).then(mode => {
       if (mode === "1") {
         setNetworkMode("lorawan");
       } else if (mode === "0") {
@@ -451,8 +452,22 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
                 </>
               )}
 
-              {/* ✅ Bouton Run seulement pour les modes unit et realtime */}
-              {(testMode === 'unit' || testMode === 'realtime') && (
+              {/* ✅ Use TestMainUnit for unit mode */}
+              {testMode === 'unit' && (
+                <TestMainUnit
+                  device={device}
+                  linkcheckResults={linkcheckResults}
+                  setLinkcheckResults={setLinkcheckResults}
+                  runUnitTest={runUnitTest}
+                  saveCSVToFile={saveCSVToFile}
+                  shareCSVFile={shareCSVFile}
+                  demoModeEnabled={demoModeEnabled}
+                  styles={styles}
+                />
+              )}
+
+              {/* ✅ Bouton Run seulement pour le mode realtime (unit is now handled by TestMainUnit) */}
+              {testMode === 'realtime' && (
                 <TouchableOpacity
                   style={isRealtimeRunning ? styles.stopButton : styles.runButton}
                   onPress={handleRun}
@@ -505,7 +520,8 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
             </>
           )}
 
-          {(testMode === 'realtime' || testMode === 'unit') && (
+          {/* Remove duplicated Save/Share/results UI for unit mode, now handled by TestMainUnit */}
+          {testMode === 'realtime' && (
             <>
               <View style={styles.actionRow}>
                 <TouchableOpacity style={styles.saveButtonWide} onPress={() => saveCSVToFile(linkcheckResults)}>
@@ -517,43 +533,39 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
                 </TouchableOpacity>
               </View>
 
+              {linkcheckResults.length > 0 && (
+                <ScrollView style={{ marginTop: 20 }} contentContainerStyle={{ flexGrow: 1 }} ref={ref => { if (ref) ref.scrollTo({ y: 0, animated: false }); }}>
+                  <ScrollView horizontal>
+                    <View>
+                      {/* En-têtes de colonnes */}
+                      <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: '#ccc', paddingBottom: 1, marginBottom: 2 }}>
+                        <Text style={{ width: 50, fontWeight: 'bold', fontSize: 12 }}>#</Text>
+                        {['Time', 'Mode', 'Gw', 'Lat', 'Lng', 'RX_RSSI', 'RX_SNR', 'TX_DEMOD_MARGIN', 'TX_DR', 'Lost'].map((col, i) => (
+                          <Text key={i} style={{ width: 80, fontWeight: 'bold', fontSize: 12 }}>{col}</Text>
+                        ))}
+                      </View>
 
-
-            </>
-          )}
-
-
-          {linkcheckResults.length > 0 && (
-            <ScrollView style={{ marginTop: 20 }} contentContainerStyle={{ flexGrow: 1 }} ref={ref => { if (ref) ref.scrollTo({ y: 0, animated: false }); }}>
-              <ScrollView horizontal>
-                <View>
-                  {/* En-têtes de colonnes */}
-                  <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: '#ccc', paddingBottom: 1, marginBottom: 2 }}>
-                    <Text style={{ width: 50, fontWeight: 'bold', fontSize: 12 }}>#</Text>
-                    {['Time', 'Mode', 'Gw', 'Lat', 'Lng', 'RX_RSSI', 'RX_SNR', 'TX_DEMOD_MARGIN', 'TX_DR', 'Lost'].map((col, i) => (
-                      <Text key={i} style={{ width: 80, fontWeight: 'bold', fontSize: 12 }}>{col}</Text>
-                    ))}
-                  </View>
-
-                  {/* Lignes de données */}
-                  {linkcheckResults.map((res, idx) => (
-                    <View key={idx} style={{ flexDirection: 'row', borderBottomWidth: 0.5, borderColor: '#eee', paddingVertical: 4 }}>
-                      <Text style={{ width: 50, fontSize: 12 }}>{idx + 1}</Text>
-                      <Text style={{ width: 80, fontSize: 12 }}>{res.time.slice(11, 19)}</Text>
-                      <Text style={{ width: 80, fontSize: 12 }}>{res.mode}</Text>
-                      <Text style={{ width: 80, fontSize: 12 }}>{res.gateways}</Text>
-                      <Text style={{ width: 80, fontSize: 12 }}>{res.latitude.toFixed(4)}</Text>
-                      <Text style={{ width: 80, fontSize: 12 }}>{res.longitude.toFixed(4)}</Text>
-                      <Text style={{ width: 80, fontSize: 12 }}>{res.rx_rssi}</Text>
-                      <Text style={{ width: 80, fontSize: 12 }}>{res.rx_snr}</Text>
-                      <Text style={{ width: 80, fontSize: 12 }}>{res.tx_demod_margin}</Text>
-                      <Text style={{ width: 80, fontSize: 12 }}>{res.tx_dr}</Text>
-                      <Text style={{ width: 80, fontSize: 12 }}>{res.lost_packets}</Text>
+                      {/* Lignes de données */}
+                      {linkcheckResults.map((res, idx) => (
+                        <View key={idx} style={{ flexDirection: 'row', borderBottomWidth: 0.5, borderColor: '#eee', paddingVertical: 4 }}>
+                          <Text style={{ width: 50, fontSize: 12 }}>{idx + 1}</Text>
+                          <Text style={{ width: 80, fontSize: 12 }}>{res.time.slice(11, 19)}</Text>
+                          <Text style={{ width: 80, fontSize: 12 }}>{res.mode}</Text>
+                          <Text style={{ width: 80, fontSize: 12 }}>{res.gateways}</Text>
+                          <Text style={{ width: 80, fontSize: 12 }}>{res.latitude.toFixed(4)}</Text>
+                          <Text style={{ width: 80, fontSize: 12 }}>{res.longitude.toFixed(4)}</Text>
+                          <Text style={{ width: 80, fontSize: 12 }}>{res.rx_rssi}</Text>
+                          <Text style={{ width: 80, fontSize: 12 }}>{res.rx_snr}</Text>
+                          <Text style={{ width: 80, fontSize: 12 }}>{res.tx_demod_margin}</Text>
+                          <Text style={{ width: 80, fontSize: 12 }}>{res.tx_dr}</Text>
+                          <Text style={{ width: 80, fontSize: 12 }}>{res.lost_packets}</Text>
+                        </View>
+                      ))}
                     </View>
-                  ))}
-                </View>
-              </ScrollView>
-            </ScrollView>
+                  </ScrollView>
+                </ScrollView>
+              )}
+            </>
           )}
 
         </>
