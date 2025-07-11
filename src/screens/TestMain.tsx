@@ -17,6 +17,7 @@ import { StorageService } from '../services/storage';
 import styles from './TestMain.styles.ts';
 import { saveCSVToFile, shareCSVFile, LinkCheckRecord } from '../services/csvUtils';
 import { checkLoraMode } from '../services/bleService';
+import { demoSamples } from './TestMainDemosample';
 
 // Props pour le composant TestMain
 interface TestMainProps {
@@ -81,47 +82,6 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
   }, []);
 
 
-  // Sample data for demo mode
-  const demoSamples: LinkCheckRecord[] = [
-    {
-      time: new Date(Date.now() - 60000).toISOString(),
-      mode: 0,
-      gateways: 2,
-      latitude: 48.8566,
-      longitude: 2.3522,
-      rx_rssi: -85,
-      rx_snr: 7.2,
-      demod: 1,
-      tx_dr: 5,
-      lost_packets: 0,
-    },
-    {
-      time: new Date(Date.now() - 30000).toISOString(),
-      mode: 0,
-      gateways: 3,
-      latitude: 48.8570,
-      longitude: 2.3530,
-      rx_rssi: -90,
-      rx_snr: 6.8,
-      demod: 1,
-      tx_dr: 5,
-      lost_packets: 1,
-    },
-    {
-      time: new Date().toISOString(),
-      mode: 0,
-      gateways: 1,
-      latitude: 48.8580,
-      longitude: 2.3540,
-      rx_rssi: -80,
-      rx_snr: 8.0,
-      demod: 1,
-      tx_dr: 5,
-      lost_packets: 0,
-    },
-  ];
-
-
   // Fonction pour exécuter le test unitaire LinkCheck
   const runUnitTest = async () => {
     if (demoModeEnabled) {
@@ -174,7 +134,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
           const decoded = Buffer.from(characteristic.value, 'base64').toString('utf-8');
           if (decoded.startsWith('+LINKCHECK:')) {
             const clean = decoded.trim().replace('+LINKCHECK: ', '');
-            const [gateways, latitude, longitude, rx_rssi, rx_snr, demod, tx_dr, lost_packets] = clean.split(',').map(Number);
+            const [gateways, latitude, longitude, rx_rssi, rx_snr, tx_demod_margin, tx_dr, lost_packets] = clean.split(',').map(Number);
 
             const newResult: LinkCheckRecord = {
               time: new Date().toISOString(), // ou récupérée du device si fournie
@@ -184,7 +144,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
               longitude,
               rx_rssi,
               rx_snr,
-              demod,
+              tx_demod_margin,
               tx_dr,
               lost_packets,
             };
@@ -252,7 +212,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
         const decoded = Buffer.from(characteristic.value, 'base64').toString('utf-8');
         if (decoded.startsWith('+LINKCHECK:')) {
           const clean = decoded.trim().replace('+LINKCHECK: ', '');
-          const [gateways, latitude, longitude, rx_rssi, rx_snr, demod, tx_dr, lost_packets] = clean.split(',').map(Number);
+          const [gateways, latitude, longitude, rx_rssi, rx_snr, tx_demod_margin, tx_dr, lost_packets] = clean.split(',').map(Number);
 
           const newResult: LinkCheckRecord = {
             time: new Date().toISOString(), // ou récupérée du device si fournie
@@ -262,7 +222,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
             longitude,
             rx_rssi,
             rx_snr,
-            demod,
+            tx_demod_margin,
             tx_dr,
             lost_packets,
           };
@@ -365,81 +325,6 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
       unitSubscriptionRef.current = null;
     }
   }, [testMode]);
-
-
-
-
-  // Fonction pour exporter les résultats LinkCheck en CSV
-  // This function is now imported from csvUtils
-  // const saveCSVToFile = async (linkcheckResults: LinkCheckData[]): Promise<string | null> => {
-  //   if (!linkcheckResults.length) {
-  //     Alert.alert('Aucun résultat', 'Aucune donnée à sauvegarder.');
-  //     return null;
-  //   }
-
-  //   try {
-  //     const headers = [
-  //       '#', 'Time', 'Mode', 'Gateways', 'Latitude', 'Longitude',
-  //       'RX_RSSI', 'RX_SNR', 'Demod', 'TX_DR', 'LostPackets'
-  //     ];
-  //     const rows = linkcheckResults.map((res, i) => [
-  //       i + 1, res.time, res.mode, res.gateways, res.latitude,
-  //       res.longitude, res.rx_rssi, res.rx_snr, res.demod, res.tx_dr, res.lost_packets
-  //     ]);
-
-  //     const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-  //     const filePath = `${RNFS.DownloadDirectoryPath}/linkcheck_results_${Date.now()}.csv`;
-
-  //     await RNFS.writeFile(filePath, csvContent, 'utf8');
-  //     Alert.alert('Succès', 'Fichier enregistré dans le dossier Téléchargements.');
-  //     return filePath;
-  //   } catch (e) {
-  //     Alert.alert('Erreur', 'Impossible de sauvegarder le fichier.');
-  //     return null;
-  //   }
-  // };
-
-  // const shareCSVFile = async (linkcheckResults: LinkCheckData[]) => {
-  //   if (!linkcheckResults.length) {
-  //     Alert.alert('Aucun résultat', 'Aucune donnée à sauvegarder.');
-  //     return null;
-  //   }
-
-  //   try {
-  //     const headers = [
-  //       '#', 'Time', 'Mode', 'Gateways', 'Latitude', 'Longitude',
-  //       'RX_RSSI', 'RX_SNR', 'Demod', 'TX_DR', 'LostPackets'
-  //     ];
-  //     const rows = linkcheckResults.map((res, i) => [
-  //       i + 1, res.time, res.mode, res.gateways, res.latitude,
-  //       res.longitude, res.rx_rssi, res.rx_snr, res.demod, res.tx_dr, res.lost_packets
-  //     ]);
-
-  //     const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-
-  //     // 🔄 Créer un fichier temporaire dans le dossier cache
-  //     const filePath = `${RNFS.CachesDirectoryPath}/linkcheck_temp_${Date.now()}.csv`;
-
-  //     await RNFS.writeFile(filePath, csvContent, 'utf8');
-
-  //     // 📤 Partager le fichier sans l’enregistrer dans le dossier Téléchargements
-  //     await Share.open({
-  //       url: 'file://' + filePath,
-  //       type: 'text/csv',
-  //       title: 'Partager LinkCheck CSV',
-  //       failOnCancel: false,
-  //     });
-
-  //     // Optionnel : supprimer le fichier après le partage
-  //     // await RNFS.unlink(filePath);
-
-  //   } catch (error) {
-  //     console.error('Erreur partage CSV :', error);
-  //     Alert.alert('Erreur', 'Impossible de partager le fichier.');
-  //   }
-  // };
-
-
 
   const getModeLabel = () => {
     if (testMode === 'unit') return 'Unit Test';
@@ -645,7 +530,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
                   {/* En-têtes de colonnes */}
                   <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: '#ccc', paddingBottom: 1, marginBottom: 2 }}>
                     <Text style={{ width: 50, fontWeight: 'bold', fontSize: 12 }}>#</Text>
-                    {['Time', 'Mode', 'Gw', 'Lat', 'Lng', 'RX_RSSI', 'RX_SNR', 'Demod', 'TX_DR', 'Lost'].map((col, i) => (
+                    {['Time', 'Mode', 'Gw', 'Lat', 'Lng', 'RX_RSSI', 'RX_SNR', 'TX_DEMOD_MARGIN', 'TX_DR', 'Lost'].map((col, i) => (
                       <Text key={i} style={{ width: 80, fontWeight: 'bold', fontSize: 12 }}>{col}</Text>
                     ))}
                   </View>
@@ -661,7 +546,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
                       <Text style={{ width: 80, fontSize: 12 }}>{res.longitude.toFixed(4)}</Text>
                       <Text style={{ width: 80, fontSize: 12 }}>{res.rx_rssi}</Text>
                       <Text style={{ width: 80, fontSize: 12 }}>{res.rx_snr}</Text>
-                      <Text style={{ width: 80, fontSize: 12 }}>{res.demod}</Text>
+                      <Text style={{ width: 80, fontSize: 12 }}>{res.tx_demod_margin}</Text>
                       <Text style={{ width: 80, fontSize: 12 }}>{res.tx_dr}</Text>
                       <Text style={{ width: 80, fontSize: 12 }}>{res.lost_packets}</Text>
                     </View>

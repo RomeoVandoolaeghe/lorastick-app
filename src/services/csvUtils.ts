@@ -10,7 +10,7 @@ export interface LinkCheckRecord {
   longitude: number;
   rx_rssi: number;
   rx_snr: number;
-  demod: number;
+  tx_demod_margin: number;
   tx_dr: number;
   lost_packets: number;
 }
@@ -24,11 +24,11 @@ export const saveCSVToFile = async (linkcheckResults: LinkCheckRecord[]): Promis
   try {
     const headers = [
       '#', 'Time', 'Mode', 'Gateways', 'Latitude', 'Longitude',
-      'RX_RSSI', 'RX_SNR', 'Demod', 'TX_DR', 'LostPackets'
+      'RX_RSSI', 'RX_SNR', 'TX_DEMOD_MARGIN', 'TX_DR', 'LostPackets'
     ];
     const rows = linkcheckResults.map((res, i) => [
       i + 1, res.time, res.mode, res.gateways, res.latitude,
-      res.longitude, res.rx_rssi, res.rx_snr, res.demod, res.tx_dr, res.lost_packets
+      res.longitude, res.rx_rssi, res.rx_snr, res.tx_demod_margin, res.tx_dr, res.lost_packets
     ]);
 
     const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
@@ -52,11 +52,11 @@ export const shareCSVFile = async (linkcheckResults: LinkCheckRecord[]) => {
   try {
     const headers = [
       '#', 'Time', 'Mode', 'Gateways', 'Latitude', 'Longitude',
-      'RX_RSSI', 'RX_SNR', 'Demod', 'TX_DR', 'LostPackets'
+      'RX_RSSI', 'RX_SNR', 'TX_DEMOD_MARGIN', 'TX_DR', 'LostPackets'
     ];
     const rows = linkcheckResults.map((res, i) => [
       i + 1, res.time, res.mode, res.gateways, res.latitude,
-      res.longitude, res.rx_rssi, res.rx_snr, res.demod, res.tx_dr, res.lost_packets
+      res.longitude, res.rx_rssi, res.rx_snr, res.tx_demod_margin, res.tx_dr, res.lost_packets
     ]);
 
     const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
