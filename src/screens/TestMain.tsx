@@ -469,14 +469,13 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
               }}
               style={styles.backButton}
             >
-              <MaterialIcons name="arrow-back" size={28} color="#007AFF" />
+              <View style={{ height: 32, width: 32, justifyContent: 'center', alignItems: 'center' }}>
+                <MaterialIcons name="arrow-back" size={28} color="#007AFF" style={{ transform: [{ translateY: 2 }] }} />
+              </View>
             </TouchableOpacity>
-
-            <View style={styles.headerTextGroup}>
-              <Text style={styles.headerSelected}>{getMethodLabel(selectedMethod)}</Text>
-              <Text style={styles.subHeader}>{getModeLabel()}</Text>
-            </View>
+            <Text style={styles.headerSelected}>{getMethodLabel(selectedMethod)}</Text>
           </View>
+          <Text style={styles.subHeader}>{getModeLabel()}</Text>
         </View>
       ) : (
         <View style={styles.headerContainer}>
@@ -503,23 +502,19 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
       )}
 
       {selectedMethod && !testMode && (
-        <View style={styles.selectionCard}>
-          <View style={styles.verticalButtonGroup}>
-            {['unit', 'realtime', 'periodic'].map(mode => (
-              <TouchableOpacity
-                key={mode}
-                style={styles.verticalButton}
-                onPress={() => setTestMode(mode as TestMode)}
-              >
-                <Text style={styles.verticalButtonText}>
-                  {mode.charAt(0).toUpperCase() + mode.slice(1)}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+        <View style={styles.verticalButtonGroup}>
+          {['unit', 'realtime', 'periodic'].map(mode => (
+            <TouchableOpacity
+              key={mode}
+              style={styles.verticalButton}
+              onPress={() => setTestMode(mode as TestMode)}
+            >
+              <Text style={styles.verticalButtonText}>
+                {mode.charAt(0).toUpperCase() + mode.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
-
-
       )}
 
 
@@ -673,9 +668,9 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F7F8FA', padding: 16 },
   header: { fontSize: 22, fontWeight: 'bold', marginBottom: 18, textAlign: 'center', color: '#222' },
-  headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 },
-  backButton: { padding: 4, marginRight: 8 },
-  headerSelected: { fontSize: 22, fontWeight: 'bold', color: '#222' },
+  headerRow: { flexDirection: 'row', alignItems: 'center', minHeight: 48, marginBottom: 18 },
+  backButton: { marginRight: 8, justifyContent: 'center', alignItems: 'center' },
+  headerSelected: { fontSize: 28, fontWeight: 'bold', color: '#222', lineHeight: 28 },
   cardRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 },
   methodCard: { flex: 1, backgroundColor: '#fff', borderRadius: 12, padding: 18, marginHorizontal: 6, alignItems: 'center', elevation: 2, borderWidth: 1, borderColor: '#E0E0E0' },
   methodCardText: { fontSize: 16, color: '#007AFF', fontWeight: '600' },
