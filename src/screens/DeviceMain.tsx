@@ -20,10 +20,7 @@ const defaultDeviceInfo = {
   appKey: '8D7F6E5D4C3B2A190817161514131211',
   region: 'EU868',
   band: '868 MHz',
-  version: '1.0.3',
-  adr: true,
-  dr: 'DR5',
-  txPower: '14 dBm',
+  subBand: 'N/A', // or another default/placeholder value
 };
 
 const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDisconnect, device }) => {
@@ -220,29 +217,26 @@ const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDiscon
         </TouchableOpacity>
       </View>
 
-      <View style={styles.statusSubCard}>
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Network server</Text>
-          <TouchableOpacity style={styles.joinButton} onPress={handleJoin}>
-            <Text style={styles.joinButtonText}>Join</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-
       {/* LoRaWAN Section */}
       <View style={styles.card}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <Text style={styles.header}>{isP2PMode ? 'LoRa P2P' : 'LoRaWAN'}</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Switch
-              value={isP2PMode}
-              onValueChange={(val) => setIsP2PMode(val)}
-            />
-          </View>
+        <Text style={styles.header}>LoRa</Text>
+        <Text style={styles.subtitle}>Select mode</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
+          <TouchableOpacity
+            style={[styles.tabButton, !isP2PMode && styles.tabButtonActive]}
+            onPress={() => setIsP2PMode(false)}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.tabButtonText, !isP2PMode && styles.tabButtonTextActive]}>LoRaWAN</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tabButton, isP2PMode && styles.tabButtonActive]}
+            onPress={() => setIsP2PMode(true)}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.tabButtonText, isP2PMode && styles.tabButtonTextActive]}>P2P</Text>
+          </TouchableOpacity>
         </View>
-
-
 
         {isP2PMode ? (
           <>
@@ -258,15 +252,22 @@ const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDiscon
                 <InfoRow label="P2P FSK modem bitrate" value={p2pConfig.iq} />
               </View>
             )}
-
           </>
         ) : (
-
           <>
+            <View style={styles.statusSubCard}>
+              <View style={styles.networkServerRow}>
+                <Text style={styles.label}>Network server</Text>
+                <TouchableOpacity style={styles.joinButton} onPress={handleJoin}>
+                  <Text style={styles.joinButtonText}>Join</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
             <InfoRow label="DevEUI" value={defaultDeviceInfo.devEUI} />
             <InfoRow label="AppEUI" value={defaultDeviceInfo.appEUI} />
             <InfoRow label="AppKey" value={defaultDeviceInfo.appKey} />
             <InfoRow label="LoRaWAN Region & Band" value={`${defaultDeviceInfo.region} / ${defaultDeviceInfo.band}`} />
+            <InfoRow label="SubBand" value={defaultDeviceInfo.subBand || 'N/A'} />
           </>
         )}
       </View>
@@ -275,9 +276,9 @@ const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDiscon
 };
 
 const InfoRow = ({ label, value }: { label: string; value: string }) => (
-  <View style={styles.infoRow}>
-    <Text style={styles.label}>{label}</Text>
-    <Text style={styles.value}>{value}</Text>
+  <View style={styles.formRow}>
+    <Text style={styles.formLabel}>{label}</Text>
+    <Text style={styles.formValue}>{value}</Text>
   </View>
 );
 
@@ -301,16 +302,31 @@ const styles = StyleSheet.create({
   },
   statusSubCard: {
     backgroundColor: '#c2e1ffff',
-    borderRadius: 10,
-    padding: 12,
+    borderRadius: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     marginBottom: 18,
+  },
+  networkServerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 0,
   },
   header: {
     fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 24,
+    marginBottom: 6,
     textAlign: 'center',
     color: '#007AFF',
+  },
+  subtitle: {
+    fontSize: 15,
+    color: '#007AFF',
+    textAlign: 'center',
+    marginBottom: 10,
+    marginTop: 0,
+    fontWeight: '500',
   },
   infoRow: {
     flexDirection: 'row',
@@ -390,6 +406,41 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 15,
     fontWeight: 'bold',
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#f0f4fa',
+    marginHorizontal: 4,
+    alignItems: 'center',
+  },
+  tabButtonActive: {
+    backgroundColor: '#007AFF',
+  },
+  tabButtonText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#007AFF',
+  },
+  tabButtonTextActive: {
+    color: '#fff',
+  },
+  formRow: {
+    marginBottom: 18,
+  },
+  formLabel: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#333',
+    marginBottom: 2,
+  },
+  formValue: {
+    fontSize: 16,
+    color: '#555',
+    marginLeft: 0,
+    textAlign: 'left',
+    flexWrap: 'wrap',
   },
 });
 
