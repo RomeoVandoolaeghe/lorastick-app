@@ -1,6 +1,10 @@
 /**
- * Sample React Native App
- * https://github.com/facebook/react-native
+ * LoraStick Manager - BLE device manager for RAK LoRaWAN sticks
+ *
+ * This app allows users to scan, connect, and manage RAK LoRaWAN BLE devices, including demo mode support.
+ *
+ * © Pilot Things
+ * 
  *
  * @format
  */
@@ -10,9 +14,9 @@ import { View, Button, FlatList, Text, StyleSheet, StatusBar, PermissionsAndroid
 import { BleManager, Device } from 'react-native-ble-plx';
 import { StorageService, DemoModeStatus } from './src/services/storage';
 import FilesMain from './src/screens/FilesMain';
+import { GetLoRaWANsetup } from './src/services/DeviceServices';
 
 const manager = new BleManager();
-
 
 async function requestAndroidPermissions() {
   try {
@@ -39,6 +43,8 @@ async function requestAndroidPermissions() {
   }
 }
 
+//--------------------------------------------------------------------------------
+// Main App component
 function App() {
   const [devices, setDevices] = useState<Device[]>([]);
   const [scanning, setScanning] = useState(false);
@@ -72,7 +78,7 @@ function App() {
     );
   };
 
-  const scanForDevices = async () => {
+  const scanForBLEDevices = async () => {
     setDevices([]);
     setScanning(true);
     let hasPermission = true;
@@ -110,8 +116,9 @@ function App() {
     }, 5000);
   };
 
-
-  const connectToDevice = async (device: Device) => {
+//--------------------------------
+// Connect to BLE device
+  const connectBLEDevice = async (device: Device) => {
     try {
       const connected = await manager.connectToDevice(device.id);
       await connected.discoverAllServicesAndCharacteristics();
@@ -119,10 +126,17 @@ function App() {
       await StorageService.setDemoMode('disable');
       await StorageService.setDeviceBLEStatus('connected');
       setDemoMode(false);
-      Alert.alert('Connexion réussie', `Connecté à ${device.name}`);
+      Alert.alert(
+        'Connected to ' + device.name,
+        'Retrieving LoRaStick configuration...'
+      );
+      // Retrieve LoRaStick configuration
+      const setup = await GetLoRaWANsetup(connected);
+      console.log('LoRaWAN setup:', setup);
+
       setShowTestPage(true);
     } catch (error: any) {
-      Alert.alert('Échec de la connexion', error.message);
+      Alert.alert('Error with Bluetooth connection:', error.message);
     }
   };
   
@@ -149,7 +163,7 @@ function App() {
       <StatusBar barStyle="dark-content" />
       <Text style={styles.title}>LoraStick Manager</Text>
       <View style={styles.buttonContainer}>
-        <Button title={scanning ? 'Scanning...' : 'Connect'} onPress={scanForDevices} disabled={scanning} />
+        <Button title={scanning ? 'Scanning...' : 'Connect'} onPress={scanForBLEDevices} disabled={scanning} />
         <View style={styles.buttonSpacer} />
         <Button title="Demo Mode" onPress={async () => {
           await StorageService.setDemoMode('enable');
@@ -162,7 +176,7 @@ function App() {
         data={devices}
         keyExtractor={item => item.id}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.deviceItem} onPress={() => connectToDevice(item)}>
+          <TouchableOpacity style={styles.deviceItem} onPress={() => connectBLEDevice(item)}>
             <Text>{item.name} ({item.id})</Text>
           </TouchableOpacity>
         )}

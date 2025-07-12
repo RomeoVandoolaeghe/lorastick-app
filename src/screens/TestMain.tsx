@@ -16,7 +16,7 @@ import Share from 'react-native-share';  // Importer react-native-share pour le 
 import { StorageService } from '../services/storage';
 import styles from './TestMain.styles.ts';
 import { saveCSVToFile, shareCSVFile, LinkCheckRecord } from '../services/csvUtils';
-import { checkLoraMode } from '../services/bleService';
+import { checkLoraMode } from '../services/DeviceServices';
 import { demoSamples } from './TestMainDemosample';
 import TestMainUnit from './TestMainUnit';
 import { Picker } from '@react-native-picker/picker';
