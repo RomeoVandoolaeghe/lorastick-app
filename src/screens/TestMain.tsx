@@ -19,6 +19,7 @@ import { saveCSVToFile, shareCSVFile, LinkCheckRecord } from '../services/csvUti
 import { checkLoraMode } from '../services/bleService';
 import { demoSamples } from './TestMainDemosample';
 import TestMainUnit from './TestMainUnit';
+import { Picker } from '@react-native-picker/picker';
 
 // Props pour le composant TestMain
 interface TestMainProps {
@@ -72,6 +73,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
   const unitSubscriptionRef = useRef<ReturnType<Device['monitorCharacteristicForService']> | null>(null);
   const [networkMode, setNetworkMode] = useState<'lorawan' | 'p2p'>('lorawan');
   const [demoModeEnabled, setDemoModeEnabled] = useState(false);
+  const [selectedDR, setSelectedDR] = useState('0');
 
 
   useEffect(() => {
@@ -90,10 +92,10 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
       setLinkcheckResults(prev => {
         const nextIndex = prev.length;
         if (nextIndex < demoSamples.length) {
-          return [...prev, demoSamples[nextIndex]];
+          return [demoSamples[nextIndex], ...prev];
         } else {
           // If all samples are shown, cycle or keep adding the last one
-          return [...prev, demoSamples[demoSamples.length - 1]];
+          return [demoSamples[demoSamples.length - 1], ...prev];
         }
       });
       return;
@@ -150,7 +152,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
               lost_packets,
             };
 
-            setLinkcheckResults(prev => [...prev, newResult]);
+            setLinkcheckResults(prev => [newResult, ...prev]);
           }
 
         }
@@ -228,7 +230,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
             lost_packets,
           };
 
-          setLinkcheckResults(prev => [...prev, newResult]);
+          setLinkcheckResults(prev => [newResult, ...prev]);
         }
 
       }
@@ -369,7 +371,23 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
                 <MaterialIcons name="arrow-back" size={28} color="#007AFF" style={{ transform: [{ translateY: 2 }] }} />
               </View>
             </TouchableOpacity>
-            <Text style={styles.headerSelected}>{getMethodLabel(selectedMethod)}</Text>
+            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 0, paddingBottom: 0 }}>
+              <Text style={styles.headerSelected}>{getMethodLabel(selectedMethod)}</Text>
+              {testMode === 'unit' && demoModeEnabled && (
+                <View style={{ width: 100 }}>
+                  <Picker
+                    selectedValue={selectedDR}
+                    onValueChange={(itemValue: string) => setSelectedDR(itemValue)}
+                    mode="dropdown"
+                    dropdownIconColor="#007AFF"
+                  >
+                    {[0,1,2,3,4].map(dr => (
+                      <Picker.Item key={dr} label={`DR ${dr}`} value={dr.toString()} color="#000" />
+                    ))}
+                  </Picker>
+                </View>
+              )}
+            </View>
           </View>
           {/* Centralized subtitle for Unit Test mode */}
           {testMode === 'unit' && (

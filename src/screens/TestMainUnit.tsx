@@ -3,6 +3,8 @@ import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { Device } from 'react-native-ble-plx';
 import { LinkCheckRecord } from '../services/csvUtils';
+import { useState } from 'react';
+import { Picker } from '@react-native-picker/picker';
 
 interface TestMainUnitProps {
   device: Device | null;
@@ -25,6 +27,8 @@ const TestMainUnit: React.FC<TestMainUnitProps> = ({
   demoModeEnabled,
   styles,
 }) => {
+  const [selectedDR, setSelectedDR] = useState('0');
+
   return (
     <>
       <TouchableOpacity style={styles.runButton} onPress={runUnitTest}>
@@ -43,16 +47,70 @@ const TestMainUnit: React.FC<TestMainUnitProps> = ({
         </TouchableOpacity>
       </View>
 
+      {/* Summary Section */}
+      {linkcheckResults.length > 0 && (
+        <View style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          backgroundColor: '#f2f2f7',
+          borderRadius: 8,
+          padding: 10,
+          marginTop: 16,
+          marginBottom: 8,
+        }}>
+          <Text style={{ fontSize: 14, fontWeight: 'bold' }}>
+            Downlink lost: {linkcheckResults.filter(r => r.lost_packets > 0).length}
+          </Text>
+          <Text style={{ fontSize: 14, fontWeight: 'bold' }}>
+            Max GW: {Math.max(...linkcheckResults.map(r => r.gateways))}
+          </Text>
+          <Text style={{ fontSize: 14, fontWeight: 'bold' }}>
+            Min GW: {Math.min(...linkcheckResults.map(r => r.gateways))}
+          </Text>
+        </View>
+      )}
+
       {linkcheckResults.length > 0 && (
         <ScrollView style={{ marginTop: 20 }} contentContainerStyle={{ flexGrow: 1 }}>
-          {[...linkcheckResults].slice().reverse().map((res, idx) => (
-            <View key={idx} style={{ marginBottom: 16, borderWidth: 1, borderColor: '#eee', borderRadius: 8, padding: 10, backgroundColor: '#fafbfc' }}>
+          {linkcheckResults.map((res, idx) => (
+            <View key={idx} style={{
+              marginBottom: 16,
+              borderWidth: 1,
+              borderColor: '#eee',
+              borderRadius: 8,
+              padding: 10,
+              paddingRight: 48,
+              paddingTop: 24,
+              backgroundColor: res.lost_packets > 0 ? '#ffeaea' : '#fafbfc',
+              position: 'relative',
+            }}>
+              {/* Badge for Test number only */}
+              <View style={{
+                position: 'absolute',
+                top: 6,
+                right: 6,
+                backgroundColor: '#007AFF',
+                borderRadius: 12,
+                minWidth: 32,
+                height: 24,
+                justifyContent: 'center',
+                alignItems: 'center',
+                paddingHorizontal: 8,
+                zIndex: 1,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.2,
+                shadowRadius: 1.41,
+                elevation: 2,
+              }}>
+                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 13 }}>{linkcheckResults.length - idx}</Text>
+              </View>
               {/* Uplink Section */}
               <View style={{ marginBottom: 8 }}>
-                <Text style={{ fontWeight: 'bold', fontSize: 13, marginBottom: 2 }}>Uplink</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
-                  <Text style={{ width: 90, fontSize: 12 }}>Test #: <Text style={{ fontWeight: 'bold' }}>{idx + 1}</Text></Text>
-                  <Text style={{ width: 120, fontSize: 12 }}>Time: <Text style={{ fontWeight: 'bold' }}>{res.time.slice(11, 19)}</Text></Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+                  <Text style={{ fontWeight: 'bold', fontSize: 13 }}>Uplink</Text>
+                  <Text style={{ fontWeight: 'bold', fontSize: 13 }}>{res.time.slice(11, 19)}</Text>
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <Text style={{ width: 120, fontSize: 12 }}>TX_DEMOD_MARGIN: <Text style={{ fontWeight: 'bold' }}>{res.tx_demod_margin}</Text></Text>

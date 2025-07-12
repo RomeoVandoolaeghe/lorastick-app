@@ -28,6 +28,34 @@
         }
       }
     },
+    "@react-native-picker/picker": {
+      "root": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/@react-native-picker/picker",
+      "name": "@react-native-picker/picker",
+      "platforms": {
+        "ios": {
+          "podspecPath": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/@react-native-picker/picker/RNCPicker.podspec",
+          "version": "2.11.1",
+          "configurations": [],
+          "scriptPhases": []
+        },
+        "android": {
+          "sourceDir": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/@react-native-picker/picker/android",
+          "packageImportPath": "import com.reactnativecommunity.picker.RNCPickerPackage;",
+          "packageInstance": "new RNCPickerPackage()",
+          "buildTypes": [],
+          "libraryName": "rnpicker",
+          "componentDescriptors": [
+            "RNCAndroidDialogPickerComponentDescriptor",
+            "RNCAndroidDropdownPickerComponentDescriptor"
+          ],
+          "cmakeListsPath": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/@react-native-picker/picker/android/src/main/jni/CMakeLists.txt",
+          "cxxModuleCMakeListsModuleName": null,
+          "cxxModuleCMakeListsPath": null,
+          "cxxModuleHeaderName": null,
+          "isPureCxxDependency": false
+        }
+      }
+    },
     "react-native-ble-plx": {
       "root": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/react-native-ble-plx",
       "name": "react-native-ble-plx",
