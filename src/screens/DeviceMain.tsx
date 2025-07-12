@@ -24,8 +24,7 @@ const defaultDeviceInfo = {
 };
 
 const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDisconnect, device }) => {
-  const [adr, setAdr] = useState(defaultDeviceInfo.adr);
-  const [adrChanged, setAdrChanged] = useState(false);
+  // Removed adr and adrChanged as 'adr' does not exist on defaultDeviceInfo
   const [bleStatus, setBleStatus] = useState<DeviceBLEStatus>('disconnected');
   const [isP2PMode, setIsP2PMode] = useState(false);
   const [p2pConfig, setP2PConfig] = useState<null | {
@@ -38,8 +37,6 @@ const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDiscon
     crc: string;
     iq: string;
   }>(null);
-
-
 
 
   useEffect(() => {
@@ -60,7 +57,7 @@ const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDiscon
 
   const handleJoin = async () => {
     if (!device) {
-      Alert.alert('Erreur', 'Aucun appareil connecté');
+      Alert.alert('Error', 'No device connected');
       return;
     }
 
@@ -75,18 +72,18 @@ const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDiscon
       const notifyChar = characteristics.find(c => c.isNotifiable);
 
       if (!writeChar || !notifyChar) {
-        Alert.alert('Erreur', 'Caractéristiques BLE non trouvées');
+        Alert.alert('Error', 'BLE characteristics not found');
         return;
       }
 
-      // Étape 1 : Envoyer "RUN GetMode"
+      // Étape 1 : Envoyer "RUN SetLoRaWANMode"
       const modePromise = new Promise<string>((resolve, reject) => {
         const subscription = device.monitorCharacteristicForService(
           notifyChar.serviceUUID,
           notifyChar.uuid,
           (error, characteristic) => {
             if (error || !characteristic?.value) {
-              reject('Erreur de lecture BLE');
+              reject('BLE read error');
               return;
             }
 
@@ -103,7 +100,7 @@ const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDiscon
       await device.writeCharacteristicWithoutResponseForService(
         writeChar.serviceUUID,
         writeChar.uuid,
-        Buffer.from('RUN Mode\n', 'utf-8').toString('base64')
+        Buffer.from('RUN SetLoRaWANMode\n', 'utf-8').toString('base64')
       );
 
       // Étape 2 : Attendre la réponse "MODE=1"
@@ -197,11 +194,9 @@ const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDiscon
     handleGetP2P(); // récupère toujours au montage
   }, []);
 
-
-
-
   const getStatusColor = () => bleStatus === 'connected' ? '#4CAF50' : '#F44336';
   const getStatusText = () => bleStatus === 'connected' ? 'Connected' : 'Disconnected';
+  const getStatusIcon = () => bleStatus === 'connected' ? 'bluetooth' : 'bluetooth-off';
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -254,6 +249,7 @@ const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDiscon
             )}
           </>
         ) : (
+          // LoraWAN mode
           <>
             <View style={styles.statusSubCard}>
               <View style={styles.networkServerRow}>

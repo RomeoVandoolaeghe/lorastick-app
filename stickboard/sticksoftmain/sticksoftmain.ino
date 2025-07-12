@@ -260,7 +260,7 @@ void loop() {
         JoinStatus();
       } else if (incoming == "RUN JoinRequest") {
         JoinRequest();
-      } else if (incoming == "RUN Mode") {
+      } else if (incoming == "RUN SetLoRaWANMode") {
         GetMode();
       } else if (incoming == "RUN GetP2P"){
         GetP2P();
