@@ -5,6 +5,7 @@ import { StorageService, DeviceBLEStatus } from '../services/storage';
 import { Buffer } from 'buffer'; // en haut du fichier si ce n’est pas déjà fait
 import { Device } from 'react-native-ble-plx'; // au cas où
 import { useDemoMode } from '../common/DemoModeContext';
+import { GetLoRaWANsetup } from '../services/DeviceServices';
 
 interface DeviceMainProps {
   selected: MenuTab;
@@ -13,17 +14,9 @@ interface DeviceMainProps {
   device: Device | null; // 👈 ajoute ça
 }
 
-const defaultDeviceInfo = {
-  devEUI: '70B3D57ED0001234',
-  appEUI: '70B3D57ED0005678',
-  appKey: '8D7F6E5D4C3B2A190817161514131211',
-  region: 'EU868',
-  band: '868 MHz',
-  subBand: 'N/A', // or another default/placeholder value
-};
+// Remove defaultDeviceInfo and all static DR/demoMode logic
 //------------------------------------------------------------
 const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDisconnect, device }) => {
-  // Removed adr and adrChanged as 'adr' does not exist on defaultDeviceInfo
   const [bleStatus, setBleStatus] = useState<DeviceBLEStatus>('disconnected');
   const [isP2PMode, setIsP2PMode] = useState(false);
   const [p2pConfig, setP2PConfig] = useState<null | {
@@ -36,10 +29,9 @@ const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDiscon
     crc: string;
     iq: string;
   }>(null);
-  const [lorawanInfo, setLoraWANInfo] = useState<any>(defaultDeviceInfo);
+  const [lorawanInfo, setLoraWANInfo] = useState<any>(null);
   const [loadingLoraWAN, setLoadingLoraWAN] = useState(false);
   const { demoMode } = useDemoMode();
-
 
   useEffect(() => {
     const loadBLEStatus = async () => {
@@ -50,41 +42,14 @@ const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDiscon
   }, []);
 
   useEffect(() => {
-    if (demoMode) {
-      setLoraWANInfo(defaultDeviceInfo);
-      return;
-    }
     setLoadingLoraWAN(true);
-    // Only get from storage
     const fetch = async () => {
-      const stored = await StorageService.getLoRaWANSetup();
-      if (stored && typeof stored === 'object' && 'raw' in stored) {
-        setLoraWANInfo(parseGetStatus((stored as any).raw));
-      } else {
-        setLoraWANInfo(defaultDeviceInfo);
-      }
+      const setup = await StorageService.getLoRaWANSetup();
+      setLoraWANInfo(setup);
       setLoadingLoraWAN(false);
     };
     fetch();
   }, [device, demoMode]);
-
-  function parseGetStatus(raw: string) {
-    // Example:
-    // DevEUI: 70B3D57ED0001234\nAppEUI: 70B3D57ED0005678\nAppKey: 8D7F6E5D4C3B2A190817161514131211\nJoin Status: JOINED\n
-    const info: any = {};
-    const lines = raw.split('\n');
-    lines.forEach(line => {
-      if (line.startsWith('DevEUI:')) info.devEUI = line.replace('DevEUI:', '').trim();
-      if (line.startsWith('AppEUI:')) info.appEUI = line.replace('AppEUI:', '').trim();
-      if (line.startsWith('AppKey:')) info.appKey = line.replace('AppKey:', '').trim();
-      if (line.startsWith('Join Status:')) info.joinStatus = line.replace('Join Status:', '').trim();
-    });
-    // Add region/band/subBand if needed, fallback to default
-    info.region = defaultDeviceInfo.region;
-    info.band = defaultDeviceInfo.band;
-    info.subBand = defaultDeviceInfo.subBand;
-    return { ...defaultDeviceInfo, ...info };
-  }
 
 
   const handleDisconnect = async () => {
@@ -287,7 +252,7 @@ const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDiscon
             )}
           </>
         ) : (
-          // LoraWAN mode
+          // -------------------LoraWAN mode
           <>
             <View style={styles.statusSubCard}>
               <View style={styles.networkServerRow}>
@@ -299,16 +264,16 @@ const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDiscon
             </View>
             {loadingLoraWAN ? (
               <Text>Loading LoRaWAN info...</Text>
-            ) : (
+            ) : lorawanInfo ? (
               <>
                 <InfoRow label="DevEUI" value={lorawanInfo.devEUI} />
                 <InfoRow label="AppEUI" value={lorawanInfo.appEUI} />
                 <InfoRow label="AppKey" value={lorawanInfo.appKey} />
-                <InfoRow label="LoRaWAN Region & Band" value={`${lorawanInfo.region} / ${lorawanInfo.band}`} />
-                <InfoRow label="SubBand" value={lorawanInfo.subBand || 'N/A'} />
-                {lorawanInfo.joinStatus && <InfoRow label="Join Status" value={lorawanInfo.joinStatus} />}
+                <InfoRow label="DR" value={lorawanInfo.dr?.toString()} />
+                <InfoRow label="Region" value={lorawanInfo.region?.toString()} />
+                {/* Add more fields as needed */}
               </>
-            )}
+            ) : null}
           </>
         )}
       </View>

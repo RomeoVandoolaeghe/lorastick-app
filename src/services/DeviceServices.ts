@@ -1,6 +1,7 @@
 import { Device } from 'react-native-ble-plx';
 import { Buffer } from 'buffer';
 import { StorageService } from './storage';
+import { getDemoModeValue } from '../common/DemoModeContext';
 
 export const checkLoraMode = async (device: Device): Promise<string | undefined> => {
   if (!device) return;
@@ -37,7 +38,19 @@ export const checkLoraMode = async (device: Device): Promise<string | undefined>
   });
 };
 
-export const GetLoRaWANsetup = async (device: Device): Promise<{ raw: string; dr?: number; region?: number } | undefined> => {
+export const GetLoRaWANsetup = async (device: Device | null): Promise<{ devEUI: string; appEUI: string; appKey: string; joinStatus: string; dr: number; region: string } | undefined> => {
+  if (getDemoModeValue()) {
+    const demoObj = {
+      devEUI: '70B3D57ED0001234',
+      appEUI: '70B3D57ED0005678',
+      appKey: '8D7F6E5D4C3B2A190817161514131211',
+      joinStatus: 'JOINED',
+      dr: 2,
+      region: 'EU868',
+    };
+    await StorageService.setLoRaWANSetup(demoObj);
+    return demoObj;
+  }
   if (!device) return;
   const services = await device.services();
   const allChars = await Promise.all(
@@ -47,7 +60,7 @@ export const GetLoRaWANsetup = async (device: Device): Promise<{ raw: string; dr
   const writeChar = characteristics.find(c => c.isWritableWithoutResponse);
   const notifyChar = characteristics.find(c => c.isNotifiable);
   if (!writeChar || !notifyChar) return;
-  return new Promise<{ raw: string; dr?: number; region?: number }>((resolve, reject) => {
+  return new Promise<{ devEUI: string; appEUI: string; appKey: string; joinStatus: string; dr: number; region: string }>((resolve, reject) => {
     const subscription = device.monitorCharacteristicForService(
       notifyChar.serviceUUID,
       notifyChar.uuid,
@@ -57,25 +70,20 @@ export const GetLoRaWANsetup = async (device: Device): Promise<{ raw: string; dr
           return reject(error);
         }
         const decoded = Buffer.from(characteristic.value, 'base64').toString('utf-8');
-        // Example expected: 'GetStatus: ...' or similar
-        if (decoded.startsWith('GetStatus') || decoded.includes('DevEUI:')) {
-          // Parse DR from a line like 'DR: <number>' if present
-          let dr: number | undefined = undefined;
-          const drMatch = decoded.match(/DR:\s*(\d+)/);
-          if (drMatch) {
-            dr = parseInt(drMatch[1], 10);
-          }
-          // Parse Region from a line like 'Region: <number>' if present
-          let region: number | undefined = undefined;
-          const regionMatch = decoded.match(/Region:\s*(\d+)/);
-          if (regionMatch) {
-            region = parseInt(regionMatch[1], 10);
-          }
-          const setupInfo = { raw: decoded, ...(dr !== undefined ? { dr } : {}), ...(region !== undefined ? { region } : {}) };
-          await StorageService.setLoRaWANSetup(setupInfo);
-          subscription.remove();
-          resolve(setupInfo);
-        }
+        // Parse fields from decoded string
+        const info: any = {};
+        const lines = decoded.split('\n');
+        lines.forEach(line => {
+          if (line.startsWith('DevEUI:')) info.devEUI = line.replace('DevEUI:', '').trim();
+          if (line.startsWith('AppEUI:')) info.appEUI = line.replace('AppEUI:', '').trim();
+          if (line.startsWith('AppKey:')) info.appKey = line.replace('AppKey:', '').trim();
+          if (line.startsWith('Join Status:')) info.joinStatus = line.replace('Join Status:', '').trim();
+          if (line.startsWith('DR:')) info.dr = parseInt(line.replace('DR:', '').trim(), 10);
+          if (line.startsWith('Region:')) info.region = line.replace('Region:', '').trim();
+        });
+        await StorageService.setLoRaWANSetup(info);
+        subscription.remove();
+        resolve(info);
       }
     );
     device.writeCharacteristicWithoutResponseForService(

@@ -152,6 +152,7 @@ function AppContent() {
         <Button title="Demo Mode" onPress={async () => {
           setDemoMode(true);
           await StorageService.setDeviceBLEStatus('connected');
+          await GetLoRaWANsetup(null); // Ensure demo data is written to storage
           setShowTestPage(true);
         }} />
       </View>
