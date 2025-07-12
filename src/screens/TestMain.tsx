@@ -16,7 +16,7 @@ import Share from 'react-native-share';  // Importer react-native-share pour le 
 import { StorageService } from '../services/storage';
 import styles from './TestMain.styles.ts';
 import { saveCSVToFile, shareCSVFile, LinkCheckRecord } from '../services/csvUtils';
-import { checkLoraMode } from '../services/DeviceServices';
+import { checkLoraMode, GetLoRaWANsetup } from '../services/DeviceServices';
 import { demoSamples } from './TestMainDemosample';
 import TestMainUnit from './TestMainUnit';
 import { Picker } from '@react-native-picker/picker';
@@ -46,7 +46,6 @@ const frequencies = [
   { key: '1min', label: '1min', value: 60 },
 ] as const;
 
-
 // Durées en secondes pour les périodes et fréquences
 const periodSeconds = { '1h': 3600, '4h': 14400, '24h': 86400 };
 const frequencySeconds = { '10s': 10, '30s': 30, '1min': 60 };
@@ -59,8 +58,9 @@ type Frequency = typeof frequencies[number]['key'];
 type TestMode = 'unit' | 'periodic' | 'realtime' | null;
 
 
-
+//----------------------------------------------------------------------
 const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) => {
+  
   // États pour gérer la sélection de méthode, mode de test, période, fréquence et résultats
   const [selectedMethod, setSelectedMethod] = useState<TestMethod | null>(null);
   const [testMode, setTestMode] = useState<TestMode>(null);
@@ -83,6 +83,21 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
     };
     loadDemoMode();
   }, []);
+
+  // Fetch DR from device on device change
+  useEffect(() => {
+    if (!device) return;
+    (async () => {
+      try {
+        const setup = await GetLoRaWANsetup(device);
+        if (setup && typeof setup.dr === 'number') {
+          setSelectedDR(setup.dr.toString());
+        }
+      } catch (e) {
+        // Ignore errors, fallback to default DR
+      }
+    })();
+  }, [device]);
 
 
   // Fonction pour exécuter le test unitaire LinkCheck

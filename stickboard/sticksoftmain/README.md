@@ -30,12 +30,14 @@ This document describes the BLE commands implemented in `sticksoftmain.ino` for 
 
 ### 3. RUN GetStatus
 **Description:**
-- Retrieves and returns LoRaWAN device status, including DevEUI, AppEUI, AppKey, and join status.
+- Retrieves and returns LoRaWAN device status, including DevEUI, AppEUI, AppKey, join status, **current DR (Data Rate)**, and **region**.
 - Uses RAK API:
   - `api.lorawan.deui.get()`
   - `api.lorawan.appeui.get()`
   - `api.lorawan.appkey.get()`
   - `api.lorawan.njs.get()`
+  - `api.lorawan.dr.get()` *(Data Rate)*
+  - `api.lorawan.band.get()` *(Region)*
 - **Returns:**
   - BLE UART message with:
     ```
@@ -43,7 +45,11 @@ This document describes the BLE commands implemented in `sticksoftmain.ino` for 
     AppEUI: <hex>
     AppKey: <hex>
     Join Status: JOINED|NOT_JOINED
+    DR: <number>
+    Region: <number>
     ```
+  - **DR**: The current LoRaWAN Data Rate (see RAK documentation for mapping to modulation parameters).
+  - **Region**: The region code as defined by the RAK RUI3 API (see [RAK_LORA_BAND](https://docs.rakwireless.com/product-categories/software-apis-and-libraries/rui3/lorawan#rak_lora_band)).
 
 ### 4. RUN JoinStatus
 **Description:**

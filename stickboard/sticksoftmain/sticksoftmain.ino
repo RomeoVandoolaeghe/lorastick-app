@@ -158,6 +158,18 @@ void GetStatus() {
   msg += (joined ? "JOINED" : "NOT_JOINED");
   msg += "\n";
 
+  // === DR (Data Rate)
+  int8_t dr = api.lorawan.dr.get();
+  msg += "DR: ";
+  msg += String(dr);
+  msg += "\n";
+
+  // === Region
+  int region = api.lorawan.band.get();
+  msg += "Region: ";
+  msg += String(region);
+  msg += "\n";
+
   // === Envoi BLE + affichage console
   api.ble.uart.write((uint8_t *)msg.c_str(), msg.length());
   Serial.print(msg);

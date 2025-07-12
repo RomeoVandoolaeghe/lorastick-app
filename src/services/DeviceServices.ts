@@ -37,7 +37,7 @@ export const checkLoraMode = async (device: Device): Promise<string | undefined>
   });
 };
 
-export const GetLoRaWANsetup = async (device: Device): Promise<object | undefined> => {
+export const GetLoRaWANsetup = async (device: Device): Promise<{ raw: string; dr?: number; region?: number } | undefined> => {
   if (!device) return;
   const services = await device.services();
   const allChars = await Promise.all(
@@ -47,7 +47,7 @@ export const GetLoRaWANsetup = async (device: Device): Promise<object | undefine
   const writeChar = characteristics.find(c => c.isWritableWithoutResponse);
   const notifyChar = characteristics.find(c => c.isNotifiable);
   if (!writeChar || !notifyChar) return;
-  return new Promise<object>((resolve, reject) => {
+  return new Promise<{ raw: string; dr?: number; region?: number }>((resolve, reject) => {
     const subscription = device.monitorCharacteristicForService(
       notifyChar.serviceUUID,
       notifyChar.uuid,
@@ -58,10 +58,20 @@ export const GetLoRaWANsetup = async (device: Device): Promise<object | undefine
         }
         const decoded = Buffer.from(characteristic.value, 'base64').toString('utf-8');
         // Example expected: 'GetStatus: ...' or similar
-        if (decoded.startsWith('GetStatus')) {
-          // Parse the LoRaWAN setup info from the decoded string
-          // This parsing logic may need to be adjusted to match actual device response
-          const setupInfo = { raw: decoded };
+        if (decoded.startsWith('GetStatus') || decoded.includes('DevEUI:')) {
+          // Parse DR from a line like 'DR: <number>' if present
+          let dr: number | undefined = undefined;
+          const drMatch = decoded.match(/DR:\s*(\d+)/);
+          if (drMatch) {
+            dr = parseInt(drMatch[1], 10);
+          }
+          // Parse Region from a line like 'Region: <number>' if present
+          let region: number | undefined = undefined;
+          const regionMatch = decoded.match(/Region:\s*(\d+)/);
+          if (regionMatch) {
+            region = parseInt(regionMatch[1], 10);
+          }
+          const setupInfo = { raw: decoded, ...(dr !== undefined ? { dr } : {}), ...(region !== undefined ? { region } : {}) };
           await StorageService.setLoRaWANSetup(setupInfo);
           subscription.remove();
           resolve(setupInfo);

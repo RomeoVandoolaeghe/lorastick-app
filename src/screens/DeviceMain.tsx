@@ -20,7 +20,7 @@ const defaultDeviceInfo = {
   band: '868 MHz',
   subBand: 'N/A', // or another default/placeholder value
 };
-
+//------------------------------------------------------------
 const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDisconnect, device }) => {
   // Removed adr and adrChanged as 'adr' does not exist on defaultDeviceInfo
   const [bleStatus, setBleStatus] = useState<DeviceBLEStatus>('disconnected');
