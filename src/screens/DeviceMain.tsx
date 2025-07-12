@@ -4,6 +4,7 @@ import { MenuTab } from '../common/BottomMenu';
 import { StorageService, DeviceBLEStatus } from '../services/storage';
 import { Buffer } from 'buffer'; // en haut du fichier si ce n’est pas déjà fait
 import { Device } from 'react-native-ble-plx'; // au cas où
+import { useDemoMode } from '../common/DemoModeContext';
 
 interface DeviceMainProps {
   selected: MenuTab;
@@ -37,7 +38,7 @@ const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDiscon
   }>(null);
   const [lorawanInfo, setLoraWANInfo] = useState<any>(defaultDeviceInfo);
   const [loadingLoraWAN, setLoadingLoraWAN] = useState(false);
-  const [demoModeEnabled, setDemoModeEnabled] = useState(false);
+  const { demoMode } = useDemoMode();
 
 
   useEffect(() => {
@@ -49,15 +50,13 @@ const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDiscon
   }, []);
 
   useEffect(() => {
-    const checkDemoModeAndFetch = async () => {
-      const isDemo = await StorageService.isDemoModeEnabled();
-      setDemoModeEnabled(isDemo);
-      if (isDemo) {
-        setLoraWANInfo(defaultDeviceInfo);
-        return;
-      }
-      setLoadingLoraWAN(true);
-      // Only get from storage
+    if (demoMode) {
+      setLoraWANInfo(defaultDeviceInfo);
+      return;
+    }
+    setLoadingLoraWAN(true);
+    // Only get from storage
+    const fetch = async () => {
       const stored = await StorageService.getLoRaWANSetup();
       if (stored && typeof stored === 'object' && 'raw' in stored) {
         setLoraWANInfo(parseGetStatus((stored as any).raw));
@@ -66,8 +65,8 @@ const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDiscon
       }
       setLoadingLoraWAN(false);
     };
-    checkDemoModeAndFetch();
-  }, [device]);
+    fetch();
+  }, [device, demoMode]);
 
   function parseGetStatus(raw: string) {
     // Example:

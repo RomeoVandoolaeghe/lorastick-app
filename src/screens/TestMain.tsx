@@ -20,6 +20,7 @@ import { checkLoraMode, GetLoRaWANsetup } from '../services/DeviceServices';
 import { demoSamples } from './TestMainDemosample';
 import TestMainUnit from './TestMainUnit';
 import { Picker } from '@react-native-picker/picker';
+import { useDemoMode } from '../common/DemoModeContext';
 
 // Props pour le composant TestMain
 interface TestMainProps {
@@ -72,14 +73,14 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
   const realtimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const unitSubscriptionRef = useRef<ReturnType<Device['monitorCharacteristicForService']> | null>(null);
   const [networkMode, setNetworkMode] = useState<'lorawan' | 'p2p'>('lorawan');
-  const [demoModeEnabled, setDemoModeEnabled] = useState(false);
+  const { demoMode } = useDemoMode();
   const [selectedDR, setSelectedDR] = useState('0');
 
 
   useEffect(() => {
     const loadDemoMode = async () => {
       const enabled = await StorageService.isDemoModeEnabled();
-      setDemoModeEnabled(enabled);
+      // setDemoModeEnabled(enabled); // This line is removed as per the edit hint
     };
     loadDemoMode();
   }, []);
@@ -102,7 +103,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
 
   // Fonction pour exécuter le test unitaire LinkCheck
   const runUnitTest = async () => {
-    if (demoModeEnabled) {
+    if (demoMode) {
       // Add one more sample value each time Run is clicked
       setLinkcheckResults(prev => {
         const nextIndex = prev.length;
@@ -388,7 +389,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
             </TouchableOpacity>
             <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 0, paddingBottom: 0 }}>
               <Text style={styles.headerSelected}>{getMethodLabel(selectedMethod)}</Text>
-              {testMode === 'unit' && demoModeEnabled && (
+              {testMode === 'unit' && demoMode && (
                 <View style={{ width: 100 }}>
                   <Picker
                     selectedValue={selectedDR}
@@ -494,7 +495,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
                   runUnitTest={runUnitTest}
                   saveCSVToFile={saveCSVToFile}
                   shareCSVFile={shareCSVFile}
-                  demoModeEnabled={demoModeEnabled}
+                  demoModeEnabled={demoMode}
                   styles={styles}
                 />
               )}

@@ -15,6 +15,7 @@ import { BleManager, Device } from 'react-native-ble-plx';
 import { StorageService, DemoModeStatus } from './src/services/storage';
 import FilesMain from './src/screens/FilesMain';
 import { GetLoRaWANsetup } from './src/services/DeviceServices';
+import { DemoModeProvider, useDemoMode } from './src/common/DemoModeContext';
 
 const manager = new BleManager();
 
@@ -45,27 +46,12 @@ async function requestAndroidPermissions() {
 
 //--------------------------------------------------------------------------------
 // Main App component
-function App() {
+function AppContent() {
   const [devices, setDevices] = useState<Device[]>([]);
   const [scanning, setScanning] = useState(false);
   const [showTestPage, setShowTestPage] = useState(false);
   const [connectedDevice, setConnectedDevice] = useState<Device | null>(null);
-  const [demoMode, setDemoMode] = useState(false);
-
-  // Load demo mode setting on app start
-  useEffect(() => {
-    const loadDemoMode = async () => {
-      const isEnabled = await StorageService.isDemoModeEnabled();
-      setDemoMode(isEnabled);
-    };
-    loadDemoMode();
-  }, []);
-
-  const handleDemoModeToggle = async (value: boolean) => {
-    const status: DemoModeStatus = value ? 'enable' : 'disable';
-    await StorageService.setDemoMode(status);
-    setDemoMode(value);
-  };
+  const { demoMode, setDemoMode } = useDemoMode();
 
   const handlePermissionDenied = () => {
     Alert.alert(
@@ -123,9 +109,8 @@ function App() {
       const connected = await manager.connectToDevice(device.id);
       await connected.discoverAllServicesAndCharacteristics();
       setConnectedDevice(connected); // ✅ garder la référence
-      await StorageService.setDemoMode('disable');
-      await StorageService.setDeviceBLEStatus('connected');
       setDemoMode(false);
+      await StorageService.setDeviceBLEStatus('connected');
       Alert.alert(
         'Connected to ' + device.name,
         'Retrieving LoRaStick configuration...'
@@ -145,7 +130,6 @@ function App() {
     return (
       <HomePage
         device={connectedDevice}
-        demoMode={demoMode}
         onBack={() => {
           if (connectedDevice) {
             manager.cancelDeviceConnection(connectedDevice.id);
@@ -166,9 +150,8 @@ function App() {
         <Button title={scanning ? 'Scanning...' : 'Connect'} onPress={scanForBLEDevices} disabled={scanning} />
         <View style={styles.buttonSpacer} />
         <Button title="Demo Mode" onPress={async () => {
-          await StorageService.setDemoMode('enable');
-          await StorageService.setDeviceBLEStatus('connected');
           setDemoMode(true);
+          await StorageService.setDeviceBLEStatus('connected');
           setShowTestPage(true);
         }} />
       </View>
@@ -183,6 +166,14 @@ function App() {
         style={styles.list}
       />
     </View>
+  );
+}
+
+function App() {
+  return (
+    <DemoModeProvider>
+      <AppContent />
+    </DemoModeProvider>
   );
 }
 

@@ -7,11 +7,12 @@ import { BottomMenu, MenuTab } from '../common/BottomMenu';
 import { Device } from 'react-native-ble-plx';
 import { StorageService } from '../services/storage';
 import FilesMain from './FilesMain';
+import { useDemoMode } from '../common/DemoModeContext';
 
-
-export function HomePage({ device, demoMode = false, onBack }: { device: Device | null, demoMode?: boolean, onBack: () => void }) {
+export function HomePage({ device, onBack }: { device: Device | null, onBack: () => void }) {
   const [selectedTab, setSelectedTab] = useState<MenuTab>('tests');
   const [deviceConnected, setDeviceConnected] = useState(false);
+  const { demoMode } = useDemoMode();
 
   // Load device connection status on component mount
   useEffect(() => {
@@ -40,7 +41,7 @@ export function HomePage({ device, demoMode = false, onBack }: { device: Device 
   if (selectedTab === 'device') {
     Content = <DeviceMain selected={selectedTab} onTabChange={setSelectedTab} onDisconnect={onBack} device={device} />;
   } else if (selectedTab === 'tests') {
-    Content = <TestMain selected={selectedTab} onTabChange={setSelectedTab} device={device} demoMode={demoMode} />;
+    Content = <TestMain selected={selectedTab} onTabChange={setSelectedTab} device={device} />;
   } else if (selectedTab === 'files') {
     Content = <FilesMain device={device} />;
   } else {

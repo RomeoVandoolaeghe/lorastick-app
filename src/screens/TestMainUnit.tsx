@@ -5,6 +5,7 @@ import { Device } from 'react-native-ble-plx';
 import { LinkCheckRecord } from '../services/csvUtils';
 import { useState } from 'react';
 import { Picker } from '@react-native-picker/picker';
+import { useDemoMode } from '../common/DemoModeContext';
 
 interface TestMainUnitProps {
   device: Device | null;
@@ -13,7 +14,6 @@ interface TestMainUnitProps {
   runUnitTest: () => void;
   saveCSVToFile: (results: LinkCheckRecord[]) => void;
   shareCSVFile: (results: LinkCheckRecord[]) => void;
-  demoModeEnabled: boolean;
   styles: any;
 }
 
@@ -24,10 +24,12 @@ const TestMainUnit: React.FC<TestMainUnitProps> = ({
   runUnitTest,
   saveCSVToFile,
   shareCSVFile,
-  demoModeEnabled,
   styles,
 }) => {
   const [selectedDR, setSelectedDR] = useState('0');
+  const { demoMode } = useDemoMode();
+
+  // Use demoMode in logic if needed
 
   return (
     <>
