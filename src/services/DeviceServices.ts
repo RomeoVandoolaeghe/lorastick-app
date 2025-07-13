@@ -130,6 +130,60 @@ export const GetDataRateList = async (region: string): Promise<Array<{ data_rate
   return dataRateJson[normRegion] || [];
 };
 
+/**
+ * Run a LinkCheck unit test on the device. Calls onResult with each LinkCheckRecord received.
+ * Returns a cleanup function to remove the BLE subscription.
+ */
+export const runUnitTest = async (
+  device: Device,
+  onResult: (result: any) => void
+): Promise<() => void> => {
+  if (!device) throw new Error('No device provided');
+  const services = await device.services();
+  const allChars = await Promise.all(
+    services.map(s => device.characteristicsForService(s.uuid))
+  );
+  const characteristics = allChars.flat();
+  const writeChar = characteristics.find(c => c.isWritableWithoutResponse);
+  const notifyChar = characteristics.find(c => c.isNotifiable);
+  if (!writeChar || !notifyChar) throw new Error('Caractéristiques non trouvées');
+
+  const subscription = device.monitorCharacteristicForService(
+    notifyChar.serviceUUID,
+    notifyChar.uuid,
+    (error, characteristic) => {
+      if (error || !characteristic?.value) return;
+      const decoded = Buffer.from(characteristic.value, 'base64').toString('utf-8');
+      if (decoded.startsWith('+LINKCHECK:')) {
+        const clean = decoded.trim().replace('+LINKCHECK: ', '');
+        const [gateways, latitude, longitude, rx_rssi, rx_snr, tx_demod_margin, tx_dr, lost_packets] = clean.split(',').map(Number);
+        const newResult = {
+          time: new Date().toISOString(),
+          mode: 0,
+          gateways,
+          latitude,
+          longitude,
+          rx_rssi,
+          rx_snr,
+          tx_demod_margin,
+          tx_dr,
+          lost_packets,
+        };
+        onResult(newResult);
+      }
+    }
+  );
+
+  await device.writeCharacteristicWithoutResponseForService(
+    writeChar.serviceUUID,
+    writeChar.uuid,
+    Buffer.from('RUN Genlinkcheck\n', 'utf-8').toString('base64')
+  );
+
+  // Return cleanup function
+  return () => subscription.remove();
+};
+
 // The following are stubs for runUnitTest, startRealtimeMode, stopRealtimeMode
 // These should be refactored as hooks or pure functions in your app context, as they depend on state and subscriptions.
 // You can move the core BLE logic here and keep state management in the component. 

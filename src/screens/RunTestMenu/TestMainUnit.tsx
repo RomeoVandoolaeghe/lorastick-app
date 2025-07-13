@@ -2,22 +2,37 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { Device } from 'react-native-ble-plx';
+import styles from './TestMain.styles.ts';
+import { Buffer } from 'buffer';
+
+// services 
+import { runUnitTest as runUnitTestService } from '../../services/DeviceServices';
+import { useDemoMode } from '../../common/DemoModeContext';
 import { saveCSVToFile, shareCSVFile, LinkCheckRecord } from '../../services/csvUtils';
 import { demoSamples } from './TestMainDemosample';
-import styles from './TestMain.styles.ts';
-import { useDemoMode } from '../../common/DemoModeContext';
+
 
 interface TestMainUnitProps {
   device: Device | null;
 }
-
+//----------------------------------------------------------------
 const TestMainUnit: React.FC<TestMainUnitProps> = ({ device }) => {
   const [linkcheckResults, setLinkcheckResults] = useState<LinkCheckRecord[]>([]);
   const [selectedDR, setSelectedDR] = useState('0');
   const { demoMode } = useDemoMode();
+  const cleanupRef = React.useRef<null | (() => void)>(null);
 
-  // Handler for running the unit test (demo mode only for now)
-  const runUnitTest = () => {
+  React.useEffect(() => {
+    return () => {
+      if (cleanupRef.current) {
+        cleanupRef.current();
+        cleanupRef.current = null;
+      }
+    };
+  }, []);
+
+  // Handler for running the unit test
+  const runUnitTest = async () => {
     if (demoMode) {
       setLinkcheckResults(prev => {
         const nextIndex = prev.length;
@@ -29,8 +44,22 @@ const TestMainUnit: React.FC<TestMainUnitProps> = ({ device }) => {
       });
       return;
     }
-    // Real device logic would go here
-    Alert.alert('Not implemented', 'Real device test not implemented in this self-contained version.');
+    if (!device) {
+      Alert.alert('Erreur', 'Aucun appareil connecté');
+      return;
+    }
+    if (cleanupRef.current) {
+      cleanupRef.current();
+      cleanupRef.current = null;
+    }
+    try {
+      const cleanup = await runUnitTestService(device, (newResult) => {
+        setLinkcheckResults(prev => [newResult, ...prev]);
+      });
+      cleanupRef.current = cleanup;
+    } catch (e: any) {
+      Alert.alert('Erreur', e.message || 'Échec');
+    }
   };
 
   // Handler for saving CSV

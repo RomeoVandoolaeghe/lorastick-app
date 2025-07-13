@@ -103,90 +103,6 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
   }, [device]);
 
 
-  // Fonction pour exécuter le test unitaire LinkCheck
-  const runUnitTest = async () => {
-    if (demoMode) {
-      // Add one more sample value each time Run is clicked
-      setLinkcheckResults(prev => {
-        const nextIndex = prev.length;
-        if (nextIndex < demoSamples.length) {
-          return [demoSamples[nextIndex], ...prev];
-        } else {
-          // If all samples are shown, cycle or keep adding the last one
-          return [demoSamples[demoSamples.length - 1], ...prev];
-        }
-      });
-      return;
-    }
-    if (!device) {
-      Alert.alert('Erreur', 'Aucun appareil connecté');
-      return;
-    }
-
-    // Nettoyer les anciennes subscriptions
-    if (unitSubscriptionRef.current) {
-      unitSubscriptionRef.current.remove();
-      unitSubscriptionRef.current = null;
-    }
-
-    // Vérifier les services et caractéristiques du device
-    try {
-      const services = await device.services();
-      const allChars = await Promise.all(
-        services.map(s => device.characteristicsForService(s.uuid))
-      );
-      const characteristics = allChars.flat();
-
-      const writeChar = characteristics.find(c => c.isWritableWithoutResponse);
-      const notifyChar = characteristics.find(c => c.isNotifiable);
-
-      if (!writeChar || !notifyChar) {
-        Alert.alert('Erreur', 'Caractéristiques non trouvées');
-        return;
-      }
-
-
-      unitSubscriptionRef.current = device.monitorCharacteristicForService(
-        notifyChar.serviceUUID,
-        notifyChar.uuid,
-        (error, characteristic) => {
-          if (error || !characteristic?.value) return;
-
-          const decoded = Buffer.from(characteristic.value, 'base64').toString('utf-8');
-          if (decoded.startsWith('+LINKCHECK:')) {
-            const clean = decoded.trim().replace('+LINKCHECK: ', '');
-            const [gateways, latitude, longitude, rx_rssi, rx_snr, tx_demod_margin, tx_dr, lost_packets] = clean.split(',').map(Number);
-
-            const newResult: LinkCheckRecord = {
-              time: new Date().toISOString(), // ou récupérée du device si fournie
-              mode: 0,
-              gateways,
-              latitude,
-              longitude,
-              rx_rssi,
-              rx_snr,
-              tx_demod_margin,
-              tx_dr,
-              lost_packets,
-            };
-
-            setLinkcheckResults(prev => [newResult, ...prev]);
-          }
-
-        }
-      );
-
-      await device.writeCharacteristicWithoutResponseForService(
-        writeChar.serviceUUID,
-        writeChar.uuid,
-        Buffer.from('RUN Genlinkcheck\n', 'utf-8').toString('base64')
-      );
-    } catch (e: any) {
-      Alert.alert('Erreur', e.message || 'Échec');
-    }
-  };
-
-
   // Fonction pour démarrer le mode temps réel
   const startRealtimeMode = async () => {
     if (!device) {
@@ -293,9 +209,8 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
   const handleRun = () => {
     if (!selectedMethod || !testMode) return;
 
-    if (testMode === 'unit') {
-      runUnitTest();
-    } else if (testMode === 'realtime') {
+    // Unit test logic is now handled inside TestMainUnit
+    if (testMode === 'realtime') {
       isRealtimeRunning ? stopRealtimeMode() : startRealtimeMode();
     } else if (testMode === 'periodic') {
       const total = Math.floor(
@@ -304,9 +219,6 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
       Alert.alert('Info', `Mode périodique : ${total} tests seront exécutés.`);
     }
   };
-
-
-
 
   // Fonction pour obtenir le label d'une méthode de test à partir de sa clé
   const getMethodLabel = (key: TestMethod | null) => {
