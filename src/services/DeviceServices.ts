@@ -2,10 +2,7 @@ import { Device } from 'react-native-ble-plx';
 import { Buffer } from 'buffer';
 import { StorageService } from './storage';
 import { getDemoModeValue } from '../common/DemoModeContext';
-import dataRateJsonRaw from '../assets/LoRaWANDataRatesbyRegion.json';
-import LoRaMinSNR from '../assets/LoRaMinSNR.json';
-
-const dataRateJson: Record<string, Array<{ data_rate: string, lora_sf: string, bit_rate: string }>> = dataRateJsonRaw;
+import { GetDataRateList, getSFfromDR, getDRfromSF, getMinSNRfromSF } from './lorawanspec';
 
 export const checkLoraMode = async (device: Device): Promise<string | undefined> => {
   if (!device) return;
@@ -103,70 +100,6 @@ export const GetLoRaWANsetup = async (device: Device | null): Promise<{ devEUI: 
     );
   });
 };
-
-/**
- * Get the list of possible data rates for a given region from the LoRaWANDataRatesbyRegion.json file.
- * @param region The region string (e.g., 'EU868', 'US915', etc.)
- * @returns Array of data rate objects: { data_rate: string, lora_sf: string, bit_rate: string }
- */
-export const GetDataRateList = async (region: string): Promise<Array<{ data_rate: string, lora_sf: string, bit_rate: string }>> => {
-  if (!region) return [];
-  const normRegion = region.trim().toUpperCase();
-  // Try exact match, fallback to empty array
-  return dataRateJson[normRegion] || [];
-};
-
-/**
- * Get the Spreading Factor (SF) string (e.g., 'SF8') for a given region and data rate (DR).
- * @param region The region string (e.g., 'EU868', 'US915', etc.)
- * @param dr The data rate (number or string)
- * @returns The SF string (e.g., 'SF8'), or undefined if not found
- */
-export function getSFfromDR(region: string, dr: number | string): string | undefined {
-  if (!region || dr === undefined || dr === null) return undefined;
-  const normRegion = region.trim().toUpperCase();
-  const drList = dataRateJson[normRegion];
-  if (!drList) return undefined;
-  const drEntry = drList.find(entry => entry.data_rate === dr.toString());
-  if (!drEntry) return undefined;
-  // lora_sf is like 'SF8 / 125 kHz', so extract 'SF8'
-  return drEntry.lora_sf.split(' ')[0];
-}
-
-/**
- * Get the Data Rate (DR) number for a given region and Spreading Factor (SF) string (e.g., 'SF8').
- * @param region The region string (e.g., 'EU868', 'US915', etc.)
- * @param sf The SF string (e.g., 'SF8')
- * @returns The DR number (as string), or undefined if not found
- */
-export function getDRfromSF(region: string, sf: string): string | undefined {
-  if (!region || !sf) return undefined;
-  const normRegion = region.trim().toUpperCase();
-  const drList = dataRateJson[normRegion];
-  if (!drList) return undefined;
-  const drEntry = drList.find(entry => entry.lora_sf.split(' ')[0] === sf);
-  if (!drEntry) return undefined;
-  return drEntry.data_rate;
-}
-
-/**
- * Helper to get MinSNR for a given SF (number or string)
- */
-function getMinSNRfromSF(sf: string | number): number | undefined {
-  // SF may be 'SF8' or 8
-  let sfNum: number | undefined = undefined;
-  if (typeof sf === 'string') {
-    if (sf.startsWith('SF')) {
-      sfNum = parseInt(sf.replace('SF', ''), 10);
-    } else {
-      sfNum = parseInt(sf, 10);
-    }
-  } else {
-    sfNum = sf;
-  }
-  const entry = (LoRaMinSNR as Array<{ SF: number; MinSNR: number }>).find(e => e.SF === sfNum);
-  return entry ? entry.MinSNR : undefined;
-}
 
 /**--------------------------------------------------------------------------------
  * Run a Genlinkcheck to generate random linkcheck results on the stick 
