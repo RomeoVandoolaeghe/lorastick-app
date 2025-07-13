@@ -6,7 +6,7 @@ import styles from './TestMain.styles.ts';
 import { Buffer } from 'buffer';
 
 // services 
-import { runUnitTest as runUnitTestService } from '../../services/DeviceServices';
+import { runGenLinkCheck as runGenLinkCheckService } from '../../services/DeviceServices';
 import { useDemoMode } from '../../common/DemoModeContext';
 import { saveCSVToFile, shareCSVFile, LinkCheckRecord } from '../../services/csvUtils';
 import { demoSamples } from './TestMainDemosample';
@@ -33,7 +33,7 @@ const TestMainUnit: React.FC<TestMainUnitProps> = ({ device }) => {
   }, []);
 
   // Handler for running the unit test
-  const runUnitTest = async () => {
+  const runGenLinkCheck = async () => {
     if (demoMode) {
       setLinkcheckResults(prev => {
         const nextIndex = prev.length;
@@ -54,7 +54,7 @@ const TestMainUnit: React.FC<TestMainUnitProps> = ({ device }) => {
       cleanupRef.current = null;
     }
     try {
-      const cleanup = await runUnitTestService(device, (newResult) => {
+      const cleanup = await runGenLinkCheckService(device, (newResult) => {
         setLinkcheckResults(prev => [newResult, ...prev]);
       });
       cleanupRef.current = cleanup;
@@ -75,7 +75,7 @@ const TestMainUnit: React.FC<TestMainUnitProps> = ({ device }) => {
 
   return (
     <>
-      <TouchableOpacity style={styles.runButton} onPress={runUnitTest}>
+      <TouchableOpacity style={styles.runButton} onPress={runGenLinkCheck}>
         <Text style={styles.runButtonText}>Run</Text>
       </TouchableOpacity>
 
