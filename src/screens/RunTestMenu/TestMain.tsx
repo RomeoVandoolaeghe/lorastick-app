@@ -40,11 +40,7 @@ const testMethods = [
 
 // Périodes et fréquences disponibles
 const periods = ['1h', '4h', '24h'] as const;
-const frequencies = [
-  { key: '10s', label: '10s', value: 10 },
-  { key: '30s', label: '30s', value: 30 },
-  { key: '1min', label: '1min', value: 60 },
-] as const;
+
 
 // Durées en secondes pour les périodes et fréquences
 const periodSeconds = { '1h': 3600, '4h': 14400, '24h': 86400 };
@@ -54,7 +50,6 @@ const frequencySeconds = { '10s': 10, '30s': 30, '1min': 60 };
 // Type pour les méthodes de test
 type TestMethod = typeof testMethods[number]['key'];
 type Period = typeof periods[number];
-type Frequency = typeof frequencies[number]['key'];
 type TestMode = 'unit' | 'periodic' | 'realtime' | null;
 
 
@@ -65,14 +60,12 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
   const [selectedMethod, setSelectedMethod] = useState<TestMethod | null>(null);
   const [testMode, setTestMode] = useState<TestMode>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<Period>('1h');
-  const [selectedFrequency, setSelectedFrequency] = useState<Frequency>('10s');
   const [linkcheckResults, setLinkcheckResults] = useState<LinkCheckRecord[]>([]);
   const [isRealtimeRunning, setIsRealtimeRunning] = useState(false);
   const realtimeSubscriptionRef = useRef<ReturnType<Device['monitorCharacteristicForService']> | null>(null);
   const realtimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const unitSubscriptionRef = useRef<ReturnType<Device['monitorCharacteristicForService']> | null>(null);
   const [networkMode, setNetworkMode] = useState<'lorawan' | 'p2p'>('lorawan');
-  const { demoMode } = useDemoMode();
   const [selectedDR, setSelectedDR] = useState('0');
   const [dataRateList, setDataRateList] = useState<Array<{ data_rate: string, lora_sf: string, bit_rate: string }>>([]);
 
@@ -289,16 +282,6 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
         return (
           <TestMainRealtime
             device={device}
-            linkcheckResults={linkcheckResults}
-            setLinkcheckResults={setLinkcheckResults}
-            isRealtimeRunning={isRealtimeRunning}
-            handleRun={handleRun}
-            saveCSVToFile={saveCSVToFile}
-            shareCSVFile={shareCSVFile}
-            selectedFrequency={selectedFrequency}
-            setSelectedFrequency={(freq: string) => setSelectedFrequency(freq as Frequency)}
-            frequencies={frequencies as any}
-            styles={styles}
           />
         );
       case 'periodic':
@@ -348,7 +331,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
               <Text style={styles.unitSubtitle}>Unit</Text>
             )}
             {testMode === 'realtime' && (
-              <Text style={styles.unitSubtitle}>RealTime</Text>
+              <Text style={styles.unitSubtitle}>Real Time</Text>
             )}
             {testMode === 'periodic' && (
               <Text style={styles.unitSubtitle}>Periodic</Text>
