@@ -12,6 +12,7 @@ export interface LinkCheckRecord {
   rx_snr: number;
   tx_demod_margin: number;
   tx_dr: number;
+  tx_power: number;
   lost_packets: number;
 }
 

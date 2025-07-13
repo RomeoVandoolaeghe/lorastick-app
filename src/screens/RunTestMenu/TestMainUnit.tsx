@@ -1,16 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { Router } from 'lucide-react-native';
 import { Device } from 'react-native-ble-plx';
 import styles from './TestMain.styles.ts';
 import { Buffer } from 'buffer';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import Slider from '@react-native-community/slider';
+import { Picker } from '@react-native-picker/picker';
+
 
 // services 
-import { runGenLinkCheck as runGenLinkCheckService } from '../../services/DeviceServices';
+import { runGenLinkCheck as runGenLinkCheckService, runLinkCheck } from '../../services/DeviceServices';
 import { useDemoMode } from '../../common/DemoModeContext';
 import { saveCSVToFile, shareCSVFile, LinkCheckRecord } from '../../services/csvUtils';
 import { demoSamples } from './TestMainDemosample';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { GetLoRaWANsetup } from '../../services/DeviceServices';
+import { GetRakPowerList, PowerEntry } from '../../services/lorawanspec';
+import TransSettingAccordion from '../../components/TransSettingAccordion';
 
 
 interface TestMainUnitProps {
@@ -19,9 +25,58 @@ interface TestMainUnitProps {
 //----------------------------------------------------------------
 const TestMainUnit: React.FC<TestMainUnitProps> = ({ device }) => {
   const [linkcheckResults, setLinkcheckResults] = useState<LinkCheckRecord[]>([]);
+  const [dataRateList, setDataRateList] = useState<Array<{ data_rate: string, lora_sf: string, bit_rate: string }>>([]);
   const [selectedDR, setSelectedDR] = useState('0');
   const { demoMode } = useDemoMode();
   const cleanupRef = React.useRef<null | (() => void)>(null);
+  const [selectedPowerIdx, setSelectedPowerIdx] = useState(0);
+  const [powerList, setPowerList] = useState<PowerEntry[]>([]);
+  const [region, setRegion] = useState<string>('');
+  const [accordionOpen, setAccordionOpen] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchRegionAndPower = async () => {
+      try {
+        const setup = await GetLoRaWANsetup(device);
+        if (setup && setup.region) {
+          let list = GetRakPowerList(setup.region);
+          list = list.sort((a, b) => a.value - b.value);
+          if (isMounted) {
+            setRegion(setup.region);
+            setPowerList(list);
+            setSelectedPowerIdx(0); // default to first
+            // Fetch DR list
+            const drList = await import('../../services/DeviceServices').then(m => m.GetDataRateList(setup.region));
+            setDataRateList(drList);
+            if (setup.dr !== undefined && drList.some(dr => dr.data_rate === setup.dr.toString())) {
+              setSelectedDR(setup.dr.toString());
+            } else if (drList.length > 0) {
+              setSelectedDR(drList[0].data_rate);
+            }
+          }
+        } else {
+          if (isMounted) {
+            setRegion('');
+            setPowerList([]);
+            setSelectedPowerIdx(0);
+            setDataRateList([]);
+            setSelectedDR('0');
+          }
+        }
+      } catch (e) {
+        if (isMounted) {
+          setRegion('');
+          setPowerList([]);
+          setSelectedPowerIdx(0);
+          setDataRateList([]);
+          setSelectedDR('0');
+        }
+      }
+    };
+    fetchRegionAndPower();
+    return () => { isMounted = false; };
+  }, [device]);
 
   React.useEffect(() => {
     return () => {
@@ -33,29 +88,22 @@ const TestMainUnit: React.FC<TestMainUnitProps> = ({ device }) => {
   }, []);
 
   // Handler for running the unit test
-  const runGenLinkCheck = async () => {
-    if (demoMode) {
-      setLinkcheckResults(prev => {
-        const nextIndex = prev.length;
-        if (nextIndex < demoSamples.length) {
-          return [demoSamples[nextIndex], ...prev];
-        } else {
-          return [demoSamples[demoSamples.length - 1], ...prev];
-        }
-      });
-      return;
-    }
-    if (!device) {
-      Alert.alert('Erreur', 'Aucun appareil connecté');
-      return;
-    }
+  const runButtonHandle = async () => {
+
     if (cleanupRef.current) {
       cleanupRef.current();
       cleanupRef.current = null;
     }
     try {
-      const cleanup = await runGenLinkCheckService(device, (newResult) => {
+      const txPower = powerList[selectedPowerIdx]?.value;
+      const dr = parseInt(selectedDR, 10);
+      if (typeof txPower !== 'number' || isNaN(dr)) {
+        Alert.alert('Erreur', 'Paramètres de transmission invalides');
+        return;
+      }
+      const cleanup = await runLinkCheck(device, txPower, dr, (newResult) => {
         setLinkcheckResults(prev => [newResult, ...prev]);
+        console.log(newResult);
       });
       cleanupRef.current = cleanup;
     } catch (e: any) {
@@ -75,7 +123,16 @@ const TestMainUnit: React.FC<TestMainUnitProps> = ({ device }) => {
 
   return (
     <>
-      <TouchableOpacity style={styles.runButton} onPress={runGenLinkCheck}>
+      <TransSettingAccordion
+        powerList={powerList}
+        selectedPowerIdx={selectedPowerIdx}
+        setSelectedPowerIdx={setSelectedPowerIdx}
+        dataRateList={dataRateList}
+        selectedDR={selectedDR}
+        setSelectedDR={setSelectedDR}
+      />
+      {/* Run Button */}
+      <TouchableOpacity style={styles.runButton} onPress={runButtonHandle}>
         <Text style={styles.runButtonText}>Run</Text>
       </TouchableOpacity>
 
@@ -153,8 +210,11 @@ const TestMainUnit: React.FC<TestMainUnitProps> = ({ device }) => {
                   </View>
                   {/* Timestamp */}
                   <Text style={{ fontWeight: 'bold', fontSize: 18, marginRight: 12 }}>{res.time.slice(11, 19)}</Text>
-                  {/* DR */}
-                  <Text style={{ fontSize: 18 }}>DR <Text style={{ fontWeight: 'bold' }}>{res.tx_dr}</Text></Text>
+                  
+                  {/* DR only */}
+                  <Text style={{ fontSize: 18 }}>
+                    DR <Text style={{ fontWeight: 'bold' }}>{res.tx_dr}</Text> | TXPower <Text style={{ fontWeight: 'bold' }}>{res.tx_power}</Text>
+                  </Text>
                 </View>
                 {/* Main Row: Four columns */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>

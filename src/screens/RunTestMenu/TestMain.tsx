@@ -8,17 +8,16 @@ import {
   ScrollView,
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { MenuTab } from '../../common/BottomMenu';
 import { Device } from 'react-native-ble-plx';
 import { Buffer } from 'buffer';
-import { StorageService } from '../../services/storage';
+import { Picker } from '@react-native-picker/picker';
+import { MenuTab } from '../../common/BottomMenu';
+
 import styles from './TestMain.styles.ts';
 import { saveCSVToFile, shareCSVFile, LinkCheckRecord } from '../../services/csvUtils';
 import { checkLoraMode, GetLoRaWANsetup, GetDataRateList } from '../../services/DeviceServices';
-import { demoSamples } from './TestMainDemosample';
 import TestMainUnit from './TestMainUnit';
 import TestMainRealtime from './TestMainRealtime';
-import { Picker } from '@react-native-picker/picker';
 import { useDemoMode } from '../../common/DemoModeContext';
 import TestMainPeriod from './TestMainPeriod';
 
@@ -343,29 +342,18 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
             </TouchableOpacity>
             <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 0, paddingBottom: 0 }}>
               <Text style={styles.headerSelected}>{getMethodLabel(selectedMethod)}</Text>
-              {testMode === 'unit' && (
-                <View style={{ width: 100 }}>
-                  <Picker
-                    selectedValue={selectedDR}
-                    onValueChange={(itemValue: string) => setSelectedDR(itemValue)}
-                    mode="dropdown"
-                    dropdownIconColor="#007AFF"
-                  >
-                    {dataRateList.map(dr => (
-                      <Picker.Item key={dr.data_rate} label={`DR ${dr.data_rate}`} value={dr.data_rate} color="#000" />
-                    ))}
-                  </Picker>
-                </View>
-              )}
             </View>
+            {/* Centralized subtitle for each test mode (moved after label) */}
+            {testMode === 'unit' && (
+              <Text style={styles.unitSubtitle}>Unit</Text>
+            )}
+            {testMode === 'realtime' && (
+              <Text style={styles.unitSubtitle}>RealTime</Text>
+            )}
+            {testMode === 'periodic' && (
+              <Text style={styles.unitSubtitle}>Periodic</Text>
+            )}
           </View>
-          {/* Centralized subtitle for Unit Test mode */}
-          {testMode === 'unit' && (
-            <Text style={styles.unitSubtitle}>Unit Test</Text>
-          )}
-          {testMode !== 'unit' && (
-            <Text style={styles.subHeader}>{getModeLabel()}</Text>
-          )}
         </View>
       ) : (
         <View style={styles.headerContainer}>

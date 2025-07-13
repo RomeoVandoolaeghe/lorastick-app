@@ -190,8 +190,8 @@ export const runLinkCheck = async (
       rx_rssi: -60,
       rx_snr: 10,
       tx_demod_margin: 20, // sample value
-      txPower,
-      dr,
+      tx_power: txPower,
+      tx_dr: dr,
       tx_snr_calculated: -27.5, // sample value for EU868
     };
     onResult(sampleResult);
@@ -247,13 +247,16 @@ export const runLinkCheck = async (
         const tx_snr_calculated = (minSNR !== undefined && tx_demod_margin !== undefined) ? minSNR - tx_demod_margin : undefined;
         const newResult = {
           time: new Date().toISOString(),
+          mode: 0,
           gateways,
+          latitude: 0, // not available in this response
+          longitude: 0, // not available in this response
           rx_rssi,
           rx_snr,
           tx_demod_margin,
-          txPower,
-          dr,
-          tx_snr_calculated,
+          tx_dr: typeof dr === 'number' ? dr : 0,
+          tx_power: typeof txPower === 'number' ? txPower : 0,
+          lost_packets: 0, // not available in this response
         };
         onResult(newResult);
       }
@@ -269,3 +272,5 @@ export const runLinkCheck = async (
   // Return cleanup function
   return () => subscription.remove();
 };
+
+export { GetDataRateList };
