@@ -77,6 +77,81 @@ void handleGetFile() {
   Serial.println("✅ Fichier simulé envoyé avec succès");
 }
 
+/////////////handleLinkCheckWithPower and data rate()////////////////////////////
+void handleLinkCheckWithPower(int txPower, int dataRate) {
+  Serial.print("BLE cmd: LinkCheck with TXPower ");
+  Serial.print(txPower);
+  Serial.print(", DataRate ");
+  Serial.println(dataRate);
+
+  // Set TX Power
+  if (!api.lorawan.txp.set(txPower)) {
+    Serial.println("Failed to set TX Power");
+    String err = "+LINKCHECK: ERROR SETTING TXPOWER\n";
+    api.ble.uart.write((uint8_t *)err.c_str(), err.length());
+    return;
+  }
+
+  // Set Data Rate
+  if (!api.lorawan.dr.set(dataRate)) {
+    Serial.println("Failed to set Data Rate");
+    String err = "+LINKCHECK: ERROR SETTING DATARATE\n";
+    api.ble.uart.write((uint8_t *)err.c_str(), err.length());
+    return;
+  }
+
+  // Set LinkCheck mode to once
+  if (!api.lorawan.linkcheck.set(1)) {
+    Serial.println("Failed to set LinkCheck mode");
+    String err = "+LINKCHECK: ERROR SETTING LINKCHECK\n";
+    api.ble.uart.write((uint8_t *)err.c_str(), err.length());
+    return;
+  }
+
+  // Send a minimal uplink (dummy byte)
+  // uint8_t payload[1] = {0x00};
+  // if (!api.lorawan.send(1, payload, 1, false)) {
+  //   Serial.println("Failed to send uplink for LinkCheck");
+  //   String err = "+LINKCHECK: ERROR SENDING UPLINK\n";
+  //   api.ble.uart.write((uint8_t *)err.c_str(), err.length());
+  //   return;
+  }
+
+  // Wait for LinkCheck event (poll for a short period)
+  unsigned long start = millis();
+  const unsigned long timeout = 8000; // 8 seconds max
+  bool gotLinkCheck = false;
+  while (millis() - start < timeout) {
+    // Check for LinkCheck event
+    if (Serial.available()) {
+      String evt = Serial.readStringUntil('\n');
+      evt.trim();
+      if (evt.startsWith("+EVT:LINKCHECK:")) {
+        // Format: +EVT:LINKCHECK:Y0,Y1,Y2,Y3,Y4
+        int y0, y1, y2, y3, y4;
+        int parsed = sscanf(evt.c_str(), "+EVT:LINKCHECK:%d,%d,%d,%d,%d", &y0, &y1, &y2, &y3, &y4);
+        if (parsed == 5 && y0 == 0) {
+          // Success
+          String payload = "+LINKCHECK: " + String(y2) + "," + String(y3) + "," + String(y4) + "," + String(y1) + ",TXP=" + String(txPower) + ",DR=" + String(dataRate) + "\n";
+          api.ble.uart.write((uint8_t *)payload.c_str(), payload.length());
+          Serial.println("✅ Real LinkCheck sent");
+        } else {
+          String err = "+LINKCHECK: ERROR LINKCHECK FAIL\n";
+          api.ble.uart.write((uint8_t *)err.c_str(), err.length());
+        }
+        gotLinkCheck = true;
+        break;
+      }
+    }
+    delay(50);
+  }
+  if (!gotLinkCheck) {
+    String err = "+LINKCHECK: TIMEOUT\n";
+    api.ble.uart.write((uint8_t *)err.c_str(), err.length());
+    Serial.println("❌ LinkCheck timeout");
+  }
+}
+
 ///////JoinStatus()///////////////////
 void JoinStatus() {
   Serial.println("BLE cmd: JoinStatus");
@@ -265,8 +340,22 @@ void loop() {
         GetMode();
       } else if (incoming == "RUN GetP2P"){
         GetP2P();
+      } else if (incoming.startsWith("RUN LinkCheck ")) {
+        // Parse TXPower and DataRate arguments
+        int firstSpace = incoming.indexOf(' ', 14);
+        int txPower = 0;
+        int dataRate = 0;
+        if (firstSpace > 0) {
+          String txStr = incoming.substring(14, firstSpace);
+          String drStr = incoming.substring(firstSpace + 1);
+          txPower = txStr.toInt();
+          dataRate = drStr.toInt();
+        } else {
+          txPower = incoming.substring(14).toInt();
+          dataRate = 0; // default if not provided
+        }
+        handleLinkCheckWithPower(txPower, dataRate);
       }
-
       else {
         Serial.println("Commande inconnue : " + incoming);
       }

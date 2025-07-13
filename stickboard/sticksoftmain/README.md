@@ -103,6 +103,34 @@ This document describes the BLE commands implemented in `sticksoftmain.ino` for 
   - BLE UART message:
     - `P2P: <frequency>,<spreadingFactor>,<bandwidth>,<codingRate>,<preambleLength>,<power>,<encryptionEnabled>,<bitrate>\n`
 
+### 8. RUN LinkCheck <TXPower> <DataRate>
+**Description:**
+- Sets the device TX power and data rate to the specified values using the RAK API.
+- Triggers a real LoRaWAN LinkCheck MAC command and sends a minimal uplink.
+- Waits for the network to respond with a real LinkCheck result, then sends this result to the BLE app.
+- Uses RAK API:
+  - `api.lorawan.txp.set(<TXPower>)` (set TX power)
+  - `api.lorawan.dr.set(<DataRate>)` (set data rate)
+  - `api.lorawan.linkcheck.set(1)` (trigger LinkCheck once)
+  - `api.lorawan.send(...)` (send minimal uplink)
+- **Returns:**
+  - BLE UART message in the format:
+    ```
+    +LINKCHECK: <gateways>,<rssi>,<snr>,<demod>,TXP=<TXPower>,DR=<DataRate>\n
+    Example: +LINKCHECK: 1,-60,11,21,TXP=22,DR=5
+    ```
+    - `<gateways>`: Number of gateways that received the uplink (from LinkCheck response)
+    - `<rssi>`: RSSI reported by the network
+    - `<snr>`: SNR reported by the network
+    - `<demod>`: Demodulation margin (from LinkCheck response)
+    - `<TXP>`: The TX power used for the uplink
+    - `<DR>`: The data rate used for the uplink
+  - If the LinkCheck fails or times out, returns:
+    - `+LINKCHECK: ERROR LINKCHECK FAIL\n` or `+LINKCHECK: TIMEOUT\n`
+- **Arguments:**
+  - `<TXPower>`: Integer value for LoRaWAN TX power in dBm (see [RAK API](https://docs.rakwireless.com/product-categories/software-apis-and-libraries/rui3/lorawan/#set-11)).
+  - `<DataRate>`: Integer value for LoRaWAN data rate (see [RAK API](https://docs.rakwireless.com/product-categories/software-apis-and-libraries/rui3/lorawan/#set-12)).
+
 ---
 
 ## References
