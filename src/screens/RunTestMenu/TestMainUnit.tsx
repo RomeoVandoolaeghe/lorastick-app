@@ -1,35 +1,47 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { Device } from 'react-native-ble-plx';
-import { LinkCheckRecord } from '../services/csvUtils';
-import { useState } from 'react';
-import { Picker } from '@react-native-picker/picker';
-import { useDemoMode } from '../common/DemoModeContext';
+import { saveCSVToFile, shareCSVFile, LinkCheckRecord } from '../../services/csvUtils';
+import { demoSamples } from './TestMainDemosample';
+import styles from './TestMain.styles.ts';
+import { useDemoMode } from '../../common/DemoModeContext';
 
 interface TestMainUnitProps {
   device: Device | null;
-  linkcheckResults: LinkCheckRecord[];
-  setLinkcheckResults: React.Dispatch<React.SetStateAction<LinkCheckRecord[]>>;
-  runUnitTest: () => void;
-  saveCSVToFile: (results: LinkCheckRecord[]) => void;
-  shareCSVFile: (results: LinkCheckRecord[]) => void;
-  styles: any;
 }
 
-const TestMainUnit: React.FC<TestMainUnitProps> = ({
-  device,
-  linkcheckResults,
-  setLinkcheckResults,
-  runUnitTest,
-  saveCSVToFile,
-  shareCSVFile,
-  styles,
-}) => {
+const TestMainUnit: React.FC<TestMainUnitProps> = ({ device }) => {
+  const [linkcheckResults, setLinkcheckResults] = useState<LinkCheckRecord[]>([]);
   const [selectedDR, setSelectedDR] = useState('0');
   const { demoMode } = useDemoMode();
 
-  // Use demoMode in logic if needed
+  // Handler for running the unit test (demo mode only for now)
+  const runUnitTest = () => {
+    if (demoMode) {
+      setLinkcheckResults(prev => {
+        const nextIndex = prev.length;
+        if (nextIndex < demoSamples.length) {
+          return [demoSamples[nextIndex], ...prev];
+        } else {
+          return [demoSamples[demoSamples.length - 1], ...prev];
+        }
+      });
+      return;
+    }
+    // Real device logic would go here
+    Alert.alert('Not implemented', 'Real device test not implemented in this self-contained version.');
+  };
+
+  // Handler for saving CSV
+  const handleSaveCSV = async () => {
+    await saveCSVToFile(linkcheckResults);
+  };
+
+  // Handler for sharing CSV
+  const handleShareCSV = async () => {
+    await shareCSVFile(linkcheckResults);
+  };
 
   return (
     <>
@@ -41,10 +53,10 @@ const TestMainUnit: React.FC<TestMainUnitProps> = ({
         <TouchableOpacity style={[styles.saveButtonWide, { backgroundColor: '#FF3B30', marginRight: 12 }]} onPress={() => setLinkcheckResults([])}>
           <MaterialIcons name="delete" size={24} color="#fff" style={{ alignSelf: 'center' }} />
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.saveButtonWide, { marginRight: 12 }]} onPress={() => saveCSVToFile(linkcheckResults)}>
+        <TouchableOpacity style={[styles.saveButtonWide, { marginRight: 12 }]} onPress={handleSaveCSV}>
           <Text style={styles.saveButtonText}>Save</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.saveButtonWide} onPress={() => shareCSVFile(linkcheckResults)}>
+        <TouchableOpacity style={styles.saveButtonWide} onPress={handleShareCSV}>
           <MaterialIcons name="share" size={24} color="#fff" style={{ alignSelf: 'center' }} />
         </TouchableOpacity>
       </View>

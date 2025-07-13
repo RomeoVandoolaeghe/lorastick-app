@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import DeviceMain from './DeviceMain';
-import TestMain from './TestMain';
+import TestMain from './RunTestMenu/TestMain';
 import UserMain from './UserMain';
 import { BottomMenu, MenuTab } from '../common/BottomMenu';
 import { Device } from 'react-native-ble-plx';

@@ -8,19 +8,19 @@ import {
   ScrollView,
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { MenuTab } from '../common/BottomMenu';
+import { MenuTab } from '../../common/BottomMenu';
 import { Device } from 'react-native-ble-plx';
 import { Buffer } from 'buffer';
-import RNFS from 'react-native-fs'; // Importer react-native-fs pour la gestion des fichiers
-import Share from 'react-native-share';  // Importer react-native-share pour le partage de fichiers
-import { StorageService } from '../services/storage';
+import { StorageService } from '../../services/storage';
 import styles from './TestMain.styles.ts';
-import { saveCSVToFile, shareCSVFile, LinkCheckRecord } from '../services/csvUtils';
-import { checkLoraMode, GetLoRaWANsetup, GetDataRateList } from '../services/DeviceServices';
+import { saveCSVToFile, shareCSVFile, LinkCheckRecord } from '../../services/csvUtils';
+import { checkLoraMode, GetLoRaWANsetup, GetDataRateList } from '../../services/DeviceServices';
 import { demoSamples } from './TestMainDemosample';
 import TestMainUnit from './TestMainUnit';
+import TestMainRealtime from './TestMainRealtime';
 import { Picker } from '@react-native-picker/picker';
-import { useDemoMode } from '../common/DemoModeContext';
+import { useDemoMode } from '../../common/DemoModeContext';
+import TestMainPeriod from './TestMainPeriod';
 
 // Props pour le composant TestMain
 interface TestMainProps {
@@ -254,8 +254,8 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
       }
     );
 
-
-    // Fonction pour envoyer la commande RUN Genlinkcheck
+    //---------------------------------------------------
+    // Send RUN Genlinkcheck to LoRaStick
     const sendLinkCheck = async () => {
       try {
         await device.writeCharacteristicWithoutResponseForService(
@@ -367,6 +367,46 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
   }, [device]);
 
 
+  // Helper to render the correct test mode component
+  const renderTestModeComponent = () => {
+    switch (testMode) {
+      case 'unit':
+        return (
+          <TestMainUnit device={device} />
+        );
+      case 'realtime':
+        return (
+          <TestMainRealtime
+            device={device}
+            linkcheckResults={linkcheckResults}
+            setLinkcheckResults={setLinkcheckResults}
+            isRealtimeRunning={isRealtimeRunning}
+            handleRun={handleRun}
+            saveCSVToFile={saveCSVToFile}
+            shareCSVFile={shareCSVFile}
+            selectedFrequency={selectedFrequency}
+            setSelectedFrequency={(freq: string) => setSelectedFrequency(freq as Frequency)}
+            frequencies={frequencies as any}
+            styles={styles}
+          />
+        );
+      case 'periodic':
+        return (
+          <TestMainPeriod
+            selectedPeriod={selectedPeriod}
+            setSelectedPeriod={(period: string) => setSelectedPeriod(period as Period)}
+            periods={periods as any}
+            selectedFrequency={selectedFrequency}
+            frequencySeconds={frequencySeconds}
+            periodSeconds={periodSeconds}
+            handleRun={handleRun}
+            styles={styles}
+          />
+        );
+      default:
+        return null;
+    }
+  };
 
 
   return (
@@ -455,156 +495,9 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
         </View>
       )}
 
+      {/* Test mode is selected, screen depends on test node */}
+      {testMode && renderTestModeComponent()}
 
-
-
-      {testMode && (
-        <>
-          {testMode && (
-            <>
-              {testMode === 'realtime' && (
-                <>
-                  <View style={styles.frequencyRow}>
-                    {frequencies.map(freq => (
-                      <TouchableOpacity
-                        key={freq.key}
-                        style={[
-                          styles.frequencyButton,
-                          selectedFrequency === freq.key && styles.frequencyButtonSelected,
-                        ]}
-                        onPress={() => setSelectedFrequency(freq.key)}
-                      >
-                        <Text
-                          style={[
-                            styles.frequencyButtonText,
-                            selectedFrequency === freq.key && styles.frequencyButtonTextSelected,
-                          ]}
-                        >
-                          {freq.label}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </>
-              )}
-
-              {/* ✅ Use TestMainUnit for unit mode */}
-              {testMode === 'unit' && (
-                <TestMainUnit
-                  device={device}
-                  linkcheckResults={linkcheckResults}
-                  setLinkcheckResults={setLinkcheckResults}
-                  runUnitTest={runUnitTest}
-                  saveCSVToFile={saveCSVToFile}
-                  shareCSVFile={shareCSVFile}
-                  styles={styles}
-                />
-              )}
-
-              {/* ✅ Bouton Run seulement pour le mode realtime (unit is now handled by TestMainUnit) */}
-              {testMode === 'realtime' && (
-                <TouchableOpacity
-                  style={isRealtimeRunning ? styles.stopButton : styles.runButton}
-                  onPress={handleRun}
-                >
-                  <Text style={isRealtimeRunning ? styles.stopButtonText : styles.runButtonText}>
-                    {isRealtimeRunning ? 'Stop' : 'Run'}
-                  </Text>
-                </TouchableOpacity>
-              )}
-
-            </>
-          )}
-
-
-          {testMode === 'periodic' && (
-            <>
-              <View style={styles.periodRow}>
-                {periods.map(period => (
-                  <TouchableOpacity
-                    key={period}
-                    style={[
-                      styles.periodButton,
-                      selectedPeriod === period && styles.periodButtonSelected,
-                    ]}
-                    onPress={() => setSelectedPeriod(period)}
-                  >
-                    <Text
-                      style={[
-                        styles.periodButtonText,
-                        selectedPeriod === period && styles.periodButtonTextSelected,
-                      ]}
-                    >
-                      {period}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <Text style={styles.testCountText}>
-                Total tests: {Math.floor(periodSeconds[selectedPeriod] / frequencySeconds[selectedFrequency])}
-              </Text>
-
-              {/* 👇 Ajoute ce bouton ici pour le placer juste après les fréquences */}
-              <TouchableOpacity
-                style={styles.runButton}
-                onPress={handleRun}
-              >
-                <Text style={styles.runButtonText}>Run</Text>
-              </TouchableOpacity>
-            </>
-          )}
-
-          {/* Remove duplicated Save/Share/results UI for unit mode, now handled by TestMainUnit */}
-          {testMode === 'realtime' && (
-            <>
-              <View style={styles.actionRow}>
-                <TouchableOpacity style={styles.saveButtonWide} onPress={() => saveCSVToFile(linkcheckResults)}>
-                  <Text style={styles.saveButtonText}>Save as file</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.shareButtonSquare} onPress={() => shareCSVFile(linkcheckResults)}>
-                  <MaterialIcons name="share" size={24} color="#fff" />
-                </TouchableOpacity>
-              </View>
-
-              {linkcheckResults.length > 0 && (
-                <ScrollView style={{ marginTop: 20 }} contentContainerStyle={{ flexGrow: 1 }} ref={ref => { if (ref) ref.scrollTo({ y: 0, animated: false }); }}>
-                  <ScrollView horizontal>
-                    <View>
-                      {/* En-têtes de colonnes */}
-                      <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: '#ccc', paddingBottom: 1, marginBottom: 2 }}>
-                        <Text style={{ width: 50, fontWeight: 'bold', fontSize: 12 }}>#</Text>
-                        {['Time', 'Mode', 'Gw', 'Lat', 'Lng', 'RX_RSSI', 'RX_SNR', 'TX_DEMOD_MARGIN', 'TX_DR', 'Lost'].map((col, i) => (
-                          <Text key={i} style={{ width: 80, fontWeight: 'bold', fontSize: 12 }}>{col}</Text>
-                        ))}
-                      </View>
-
-                      {/* Lignes de données */}
-                      {linkcheckResults.map((res, idx) => (
-                        <View key={idx} style={{ flexDirection: 'row', borderBottomWidth: 0.5, borderColor: '#eee', paddingVertical: 4 }}>
-                          <Text style={{ width: 50, fontSize: 12 }}>{idx + 1}</Text>
-                          <Text style={{ width: 80, fontSize: 12 }}>{res.time.slice(11, 19)}</Text>
-                          <Text style={{ width: 80, fontSize: 12 }}>{res.mode}</Text>
-                          <Text style={{ width: 80, fontSize: 12 }}>{res.gateways}</Text>
-                          <Text style={{ width: 80, fontSize: 12 }}>{res.latitude.toFixed(4)}</Text>
-                          <Text style={{ width: 80, fontSize: 12 }}>{res.longitude.toFixed(4)}</Text>
-                          <Text style={{ width: 80, fontSize: 12 }}>{res.rx_rssi}</Text>
-                          <Text style={{ width: 80, fontSize: 12 }}>{res.rx_snr}</Text>
-                          <Text style={{ width: 80, fontSize: 12 }}>{res.tx_demod_margin}</Text>
-                          <Text style={{ width: 80, fontSize: 12 }}>{res.tx_dr}</Text>
-                          <Text style={{ width: 80, fontSize: 12 }}>{res.lost_packets}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  </ScrollView>
-                </ScrollView>
-              )}
-            </>
-          )}
-
-        </>
-      )}
     </View>
   );
 };
