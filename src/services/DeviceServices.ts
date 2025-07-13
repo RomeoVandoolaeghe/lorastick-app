@@ -3,6 +3,7 @@ import { Buffer } from 'buffer';
 import { StorageService } from './storage';
 import { getDemoModeValue } from '../common/DemoModeContext';
 import dataRateJsonRaw from '../assets/LoRaWANDataRatesbyRegion.json';
+import LoRaMinSNR from '../assets/LoRaMinSNR.json';
 
 const dataRateJson: Record<string, Array<{ data_rate: string, lora_sf: string, bit_rate: string }>> = dataRateJsonRaw;
 
@@ -40,7 +41,8 @@ export const checkLoraMode = async (device: Device): Promise<string | undefined>
     );
   });
 };
-
+//------------------------------------------------------------------
+// RUN 
 export const GetLoRaWANsetup = async (device: Device | null): Promise<{ devEUI: string; appEUI: string; appKey: string; joinStatus: string; dr: number; region: string; SF: string } | undefined> => {
   if (getDemoModeValue()) {
     const demoObj = {
@@ -53,14 +55,7 @@ export const GetLoRaWANsetup = async (device: Device | null): Promise<{ devEUI: 
       SF: '', // will be set below
     };
     // Set SF based on DR and region
-    const drList = dataRateJson[demoObj.region];
-    if (drList) {
-      const drEntry = drList.find(dr => dr.data_rate === demoObj.dr.toString());
-      if (drEntry) {
-        // lora_sf is like 'SF8 / 125 kHz', so extract 'SF8'
-        demoObj.SF = drEntry.lora_sf.split(' ')[0];
-      }
-    }
+    demoObj.SF = getSFfromDR(demoObj.region, demoObj.dr) || '';
     await StorageService.setLoRaWANSetup(demoObj);
     return demoObj;
   }
@@ -95,16 +90,7 @@ export const GetLoRaWANsetup = async (device: Device | null): Promise<{ devEUI: 
           if (line.startsWith('Region:')) info.region = line.replace('Region:', '').trim();
         });
         // Set SF based on DR and region
-        info.SF = '';
-        if (info.region && info.dr !== undefined) {
-          const drList = dataRateJson[info.region];
-          if (drList) {
-            const drEntry = drList.find(dr => dr.data_rate === info.dr.toString());
-            if (drEntry) {
-              info.SF = drEntry.lora_sf.split(' ')[0];
-            }
-          }
-        }
+        info.SF = getSFfromDR(info.region, info.dr) || '';
         await StorageService.setLoRaWANSetup(info);
         subscription.remove();
         resolve(info);
@@ -131,6 +117,58 @@ export const GetDataRateList = async (region: string): Promise<Array<{ data_rate
 };
 
 /**
+ * Get the Spreading Factor (SF) string (e.g., 'SF8') for a given region and data rate (DR).
+ * @param region The region string (e.g., 'EU868', 'US915', etc.)
+ * @param dr The data rate (number or string)
+ * @returns The SF string (e.g., 'SF8'), or undefined if not found
+ */
+export function getSFfromDR(region: string, dr: number | string): string | undefined {
+  if (!region || dr === undefined || dr === null) return undefined;
+  const normRegion = region.trim().toUpperCase();
+  const drList = dataRateJson[normRegion];
+  if (!drList) return undefined;
+  const drEntry = drList.find(entry => entry.data_rate === dr.toString());
+  if (!drEntry) return undefined;
+  // lora_sf is like 'SF8 / 125 kHz', so extract 'SF8'
+  return drEntry.lora_sf.split(' ')[0];
+}
+
+/**
+ * Get the Data Rate (DR) number for a given region and Spreading Factor (SF) string (e.g., 'SF8').
+ * @param region The region string (e.g., 'EU868', 'US915', etc.)
+ * @param sf The SF string (e.g., 'SF8')
+ * @returns The DR number (as string), or undefined if not found
+ */
+export function getDRfromSF(region: string, sf: string): string | undefined {
+  if (!region || !sf) return undefined;
+  const normRegion = region.trim().toUpperCase();
+  const drList = dataRateJson[normRegion];
+  if (!drList) return undefined;
+  const drEntry = drList.find(entry => entry.lora_sf.split(' ')[0] === sf);
+  if (!drEntry) return undefined;
+  return drEntry.data_rate;
+}
+
+/**
+ * Helper to get MinSNR for a given SF (number or string)
+ */
+function getMinSNRfromSF(sf: string | number): number | undefined {
+  // SF may be 'SF8' or 8
+  let sfNum: number | undefined = undefined;
+  if (typeof sf === 'string') {
+    if (sf.startsWith('SF')) {
+      sfNum = parseInt(sf.replace('SF', ''), 10);
+    } else {
+      sfNum = parseInt(sf, 10);
+    }
+  } else {
+    sfNum = sf;
+  }
+  const entry = (LoRaMinSNR as Array<{ SF: number; MinSNR: number }>).find(e => e.SF === sfNum);
+  return entry ? entry.MinSNR : undefined;
+}
+
+/**
  * Run a LinkCheck unit test on the device. Calls onResult with each LinkCheckRecord received.
  * Returns a cleanup function to remove the BLE subscription.
  */
@@ -148,15 +186,29 @@ export const runUnitTest = async (
   const notifyChar = characteristics.find(c => c.isNotifiable);
   if (!writeChar || !notifyChar) throw new Error('Caractéristiques non trouvées');
 
+  // Helper to get region from device or context
+  // You may need to adjust this to get the correct region for your device
+  async function getDeviceRegion(): Promise<string | undefined> {
+    // Try to get from storage (as in GetLoRaWANsetup)
+    const setupRaw = await (StorageService.getLoRaWANSetup?.() ?? undefined);
+    const setup: { region?: string } | undefined = (setupRaw && typeof setupRaw === 'object') ? setupRaw as { region?: string } : undefined;
+    return setup?.region;
+  }
+
   const subscription = device.monitorCharacteristicForService(
     notifyChar.serviceUUID,
     notifyChar.uuid,
-    (error, characteristic) => {
+    async (error, characteristic) => {
       if (error || !characteristic?.value) return;
       const decoded = Buffer.from(characteristic.value, 'base64').toString('utf-8');
       if (decoded.startsWith('+LINKCHECK:')) {
         const clean = decoded.trim().replace('+LINKCHECK: ', '');
         const [gateways, latitude, longitude, rx_rssi, rx_snr, tx_demod_margin, tx_dr, lost_packets] = clean.split(',').map(Number);
+        // Get region and SF for MinSNR lookup
+        const region = await getDeviceRegion();
+        const sf = region ? getSFfromDR(region, tx_dr) : undefined;
+        const minSNR = sf ? getMinSNRfromSF(sf) : undefined;
+        const tx_snr_calculated = (minSNR !== undefined && tx_demod_margin !== undefined) ? minSNR - tx_demod_margin : undefined;
         const newResult = {
           time: new Date().toISOString(),
           mode: 0,
@@ -168,6 +220,7 @@ export const runUnitTest = async (
           tx_demod_margin,
           tx_dr,
           lost_packets,
+          tx_snr_calculated,
         };
         onResult(newResult);
       }
