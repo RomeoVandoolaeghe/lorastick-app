@@ -58,8 +58,6 @@ void handleGenlinkCheck() {
 
   Serial.println("✅ Envoi terminé");
 }
-//--------------------------------
-// not used ?
 
 ////////////////handleGetFile()////////////////////////////////
 void handleGetFile() {
@@ -240,16 +238,7 @@ void GetP2P() {
   Serial.println("BLE cmd: GetP2P");
   Serial.println(response);
   api.ble.uart.write((uint8_t *)response.c_str(), response.length());
-
-
-
-
-
 }
-
-
-
-
 
 //--------------------------------
 // Main loop
