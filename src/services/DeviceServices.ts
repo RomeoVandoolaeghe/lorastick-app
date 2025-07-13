@@ -41,7 +41,7 @@ export const checkLoraMode = async (device: Device): Promise<string | undefined>
   });
 };
 
-export const GetLoRaWANsetup = async (device: Device | null): Promise<{ devEUI: string; appEUI: string; appKey: string; joinStatus: string; dr: number; region: string } | undefined> => {
+export const GetLoRaWANsetup = async (device: Device | null): Promise<{ devEUI: string; appEUI: string; appKey: string; joinStatus: string; dr: number; region: string; SF: string } | undefined> => {
   if (getDemoModeValue()) {
     const demoObj = {
       devEUI: '70B3D57ED0001234',
@@ -50,7 +50,17 @@ export const GetLoRaWANsetup = async (device: Device | null): Promise<{ devEUI: 
       joinStatus: 'JOINED',
       dr: 2,
       region: 'EU868',
+      SF: '', // will be set below
     };
+    // Set SF based on DR and region
+    const drList = dataRateJson[demoObj.region];
+    if (drList) {
+      const drEntry = drList.find(dr => dr.data_rate === demoObj.dr.toString());
+      if (drEntry) {
+        // lora_sf is like 'SF8 / 125 kHz', so extract 'SF8'
+        demoObj.SF = drEntry.lora_sf.split(' ')[0];
+      }
+    }
     await StorageService.setLoRaWANSetup(demoObj);
     return demoObj;
   }
@@ -63,7 +73,7 @@ export const GetLoRaWANsetup = async (device: Device | null): Promise<{ devEUI: 
   const writeChar = characteristics.find(c => c.isWritableWithoutResponse);
   const notifyChar = characteristics.find(c => c.isNotifiable);
   if (!writeChar || !notifyChar) return;
-  return new Promise<{ devEUI: string; appEUI: string; appKey: string; joinStatus: string; dr: number; region: string }>((resolve, reject) => {
+  return new Promise<{ devEUI: string; appEUI: string; appKey: string; joinStatus: string; dr: number; region: string; SF: string }>((resolve, reject) => {
     const subscription = device.monitorCharacteristicForService(
       notifyChar.serviceUUID,
       notifyChar.uuid,
@@ -84,6 +94,17 @@ export const GetLoRaWANsetup = async (device: Device | null): Promise<{ devEUI: 
           if (line.startsWith('DR:')) info.dr = parseInt(line.replace('DR:', '').trim(), 10);
           if (line.startsWith('Region:')) info.region = line.replace('Region:', '').trim();
         });
+        // Set SF based on DR and region
+        info.SF = '';
+        if (info.region && info.dr !== undefined) {
+          const drList = dataRateJson[info.region];
+          if (drList) {
+            const drEntry = drList.find(dr => dr.data_rate === info.dr.toString());
+            if (drEntry) {
+              info.SF = drEntry.lora_sf.split(' ')[0];
+            }
+          }
+        }
         await StorageService.setLoRaWANSetup(info);
         subscription.remove();
         resolve(info);

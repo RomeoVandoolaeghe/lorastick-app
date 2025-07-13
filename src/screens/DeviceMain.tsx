@@ -269,8 +269,9 @@ const DeviceMain: React.FC<DeviceMainProps> = ({ selected, onTabChange, onDiscon
                 <InfoRow label="DevEUI" value={lorawanInfo.devEUI} />
                 <InfoRow label="AppEUI" value={lorawanInfo.appEUI} />
                 <InfoRow label="AppKey" value={lorawanInfo.appKey} />
-                <InfoRow label="DR" value={lorawanInfo.dr?.toString()} />
+                <InfoRow label={`DR (${lorawanInfo.SF || ''})`} value={lorawanInfo.dr?.toString()} />
                 <InfoRow label="Region" value={lorawanInfo.region?.toString()} />
+     
                 {/* Add more fields as needed */}
               </>
             ) : null}

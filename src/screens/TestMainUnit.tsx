@@ -110,9 +110,9 @@ const TestMainUnit: React.FC<TestMainUnitProps> = ({
               </View>
               {/* Uplink Section */}
               <View style={{ marginBottom: 8 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
-                  <Text style={{ fontWeight: 'bold', fontSize: 13 }}>Uplink</Text>
-                  <Text style={{ fontWeight: 'bold', fontSize: 13 }}>{res.time.slice(11, 19)}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', marginBottom: 2 }}>
+                  {/* Time on top left */}
+                  <Text style={{ fontWeight: 'bold', fontSize: 13, marginRight: 12 }}>{res.time.slice(11, 19)}</Text>
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <Text style={{ width: 120, fontSize: 12 }}>TX_DEMOD_MARGIN: <Text style={{ fontWeight: 'bold' }}>{res.tx_demod_margin}</Text></Text>
@@ -126,7 +126,24 @@ const TestMainUnit: React.FC<TestMainUnitProps> = ({
                   <Text style={{ color: 'red', fontWeight: 'bold', fontSize: 12 }}>Downlink not received</Text>
                 ) : (
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={{ width: 90, fontSize: 12 }}>GW: <Text style={{ fontWeight: 'bold' }}>{res.gateways}</Text></Text>
+                    {/* WiFi icon and badge for gateways */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 8 }}>
+                      <MaterialIcons name="wifi" size={18} color="#007AFF" />
+                      <View style={{
+                        backgroundColor: '#007AFF',
+                        borderRadius: 8,
+                        minWidth: 22,
+                        height: 18,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        paddingHorizontal: 6,
+                        marginLeft: -8,
+                        marginRight: 8,
+                        zIndex: 1,
+                      }}>
+                        <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>{res.gateways}</Text>
+                      </View>
+                    </View>
                     <Text style={{ width: 100, fontSize: 12 }}>RX_SNR: <Text style={{ fontWeight: 'bold' }}>{res.rx_snr}</Text></Text>
                     <Text style={{ width: 110, fontSize: 12 }}>RX_RSSI: <Text style={{ fontWeight: 'bold' }}>{res.rx_rssi}</Text></Text>
                   </View>
