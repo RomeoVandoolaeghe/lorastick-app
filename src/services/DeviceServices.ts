@@ -2,6 +2,9 @@ import { Device } from 'react-native-ble-plx';
 import { Buffer } from 'buffer';
 import { StorageService } from './storage';
 import { getDemoModeValue } from '../common/DemoModeContext';
+import dataRateJsonRaw from '../assets/LoRaWANDataRatesbyRegion.json';
+
+const dataRateJson: Record<string, Array<{ data_rate: string, lora_sf: string, bit_rate: string }>> = dataRateJsonRaw;
 
 export const checkLoraMode = async (device: Device): Promise<string | undefined> => {
   if (!device) return;
@@ -92,6 +95,18 @@ export const GetLoRaWANsetup = async (device: Device | null): Promise<{ devEUI: 
       Buffer.from('RUN GetStatus\n', 'utf-8').toString('base64')
     );
   });
+};
+
+/**
+ * Get the list of possible data rates for a given region from the LoRaWANDataRatesbyRegion.json file.
+ * @param region The region string (e.g., 'EU868', 'US915', etc.)
+ * @returns Array of data rate objects: { data_rate: string, lora_sf: string, bit_rate: string }
+ */
+export const GetDataRateList = async (region: string): Promise<Array<{ data_rate: string, lora_sf: string, bit_rate: string }>> => {
+  if (!region) return [];
+  const normRegion = region.trim().toUpperCase();
+  // Try exact match, fallback to empty array
+  return dataRateJson[normRegion] || [];
 };
 
 // The following are stubs for runUnitTest, startRealtimeMode, stopRealtimeMode

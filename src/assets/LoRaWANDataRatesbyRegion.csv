@@ -1,4 +1,4 @@
-region,xdata_rate,LoRa SF,bit_rate
+region,data_rate,LoRa SF,bit_rate
 EU868/EU433/AS923,0,SF12 / 125 kHz,250
 EU868/EU433/AS923,1,SF11 / 125 kHz,440
 EU868/EU433/AS923,2,SF10 / 125 kHz,980

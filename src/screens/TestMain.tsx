@@ -16,7 +16,7 @@ import Share from 'react-native-share';  // Importer react-native-share pour le 
 import { StorageService } from '../services/storage';
 import styles from './TestMain.styles.ts';
 import { saveCSVToFile, shareCSVFile, LinkCheckRecord } from '../services/csvUtils';
-import { checkLoraMode, GetLoRaWANsetup } from '../services/DeviceServices';
+import { checkLoraMode, GetLoRaWANsetup, GetDataRateList } from '../services/DeviceServices';
 import { demoSamples } from './TestMainDemosample';
 import TestMainUnit from './TestMainUnit';
 import { Picker } from '@react-native-picker/picker';
@@ -75,27 +75,29 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
   const [networkMode, setNetworkMode] = useState<'lorawan' | 'p2p'>('lorawan');
   const { demoMode } = useDemoMode();
   const [selectedDR, setSelectedDR] = useState('0');
+  const [dataRateList, setDataRateList] = useState<Array<{ data_rate: string, lora_sf: string, bit_rate: string }>>([]);
 
-
-  useEffect(() => {
-    const loadDemoMode = async () => {
-      const enabled = await StorageService.isDemoModeEnabled();
-      // setDemoModeEnabled(enabled); // This line is removed as per the edit hint
-    };
-    loadDemoMode();
-  }, []);
 
   // Fetch DR from device on device change
   useEffect(() => {
-    if (!device) return;
     (async () => {
       try {
         const setup = await GetLoRaWANsetup(device);
-        if (setup && typeof setup.dr === 'number') {
-          setSelectedDR(setup.dr.toString());
+        if (setup && setup.region) {
+          const drList = await GetDataRateList(setup.region);
+          console.log('Picker region:', setup.region, 'DataRateList:', drList, 'Device DR:', setup.dr);
+          setDataRateList(drList);
+          // Always set selectedDR to device DR if possible, else fallback to first in list
+          if (setup.dr !== undefined && drList.some(dr => dr.data_rate === setup.dr.toString())) {
+            setSelectedDR(setup.dr.toString());
+          } else if (drList.length > 0) {
+            setSelectedDR(drList[0].data_rate);
+          }
+        } else {
+          setDataRateList([]);
         }
       } catch (e) {
-        // Ignore errors, fallback to default DR
+        setDataRateList([]);
       }
     })();
   }, [device]);
@@ -389,7 +391,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
             </TouchableOpacity>
             <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 0, paddingBottom: 0 }}>
               <Text style={styles.headerSelected}>{getMethodLabel(selectedMethod)}</Text>
-              {testMode === 'unit' && demoMode && (
+              {testMode === 'unit' && (
                 <View style={{ width: 100 }}>
                   <Picker
                     selectedValue={selectedDR}
@@ -397,8 +399,8 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
                     mode="dropdown"
                     dropdownIconColor="#007AFF"
                   >
-                    {[0,1,2,3,4].map(dr => (
-                      <Picker.Item key={dr} label={`DR ${dr}`} value={dr.toString()} color="#000" />
+                    {dataRateList.map(dr => (
+                      <Picker.Item key={dr.data_rate} label={`DR ${dr.data_rate}`} value={dr.data_rate} color="#000" />
                     ))}
                   </Picker>
                 </View>
@@ -495,7 +497,6 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
                   runUnitTest={runUnitTest}
                   saveCSVToFile={saveCSVToFile}
                   shareCSVFile={shareCSVFile}
-                  demoModeEnabled={demoMode}
                   styles={styles}
                 />
               )}

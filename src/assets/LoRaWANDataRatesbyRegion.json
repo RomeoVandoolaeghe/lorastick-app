@@ -1,0 +1,84 @@
+{
+  "EU868": [
+    { "data_rate": "0", "lora_sf": "SF12 / 125 kHz", "bit_rate": "250" },
+    { "data_rate": "1", "lora_sf": "SF11 / 125 kHz", "bit_rate": "440" },
+    { "data_rate": "2", "lora_sf": "SF10 / 125 kHz", "bit_rate": "980" },
+    { "data_rate": "3", "lora_sf": "SF9 / 125 kHz", "bit_rate": "1760" },
+    { "data_rate": "4", "lora_sf": "SF8 / 125 kHz", "bit_rate": "3125" },
+    { "data_rate": "5", "lora_sf": "SF7 / 125 kHz", "bit_rate": "5470" },
+    { "data_rate": "6", "lora_sf": "SF7 / 250 kHz", "bit_rate": "11000" },
+    { "data_rate": "7", "lora_sf": "FSK: 50 kbps", "bit_rate": "50000" }
+  ],
+  "EU433": [
+    { "data_rate": "0", "lora_sf": "SF12 / 125 kHz", "bit_rate": "250" },
+    { "data_rate": "1", "lora_sf": "SF11 / 125 kHz", "bit_rate": "440" },
+    { "data_rate": "2", "lora_sf": "SF10 / 125 kHz", "bit_rate": "980" },
+    { "data_rate": "3", "lora_sf": "SF9 / 125 kHz", "bit_rate": "1760" },
+    { "data_rate": "4", "lora_sf": "SF8 / 125 kHz", "bit_rate": "3125" },
+    { "data_rate": "5", "lora_sf": "SF7 / 125 kHz", "bit_rate": "5470" },
+    { "data_rate": "6", "lora_sf": "SF7 / 250 kHz", "bit_rate": "11000" },
+    { "data_rate": "7", "lora_sf": "FSK: 50 kbps", "bit_rate": "50000" }
+  ],
+  "AS923": [
+    { "data_rate": "0", "lora_sf": "SF12 / 125 kHz", "bit_rate": "250" },
+    { "data_rate": "1", "lora_sf": "SF11 / 125 kHz", "bit_rate": "440" },
+    { "data_rate": "2", "lora_sf": "SF10 / 125 kHz", "bit_rate": "980" },
+    { "data_rate": "3", "lora_sf": "SF9 / 125 kHz", "bit_rate": "1760" },
+    { "data_rate": "4", "lora_sf": "SF8 / 125 kHz", "bit_rate": "3125" },
+    { "data_rate": "5", "lora_sf": "SF7 / 125 kHz", "bit_rate": "5470" },
+    { "data_rate": "6", "lora_sf": "SF7 / 250 kHz", "bit_rate": "11000" },
+    { "data_rate": "7", "lora_sf": "FSK: 50 kbps", "bit_rate": "50000" }
+  ],
+  "CN470": [
+    { "data_rate": "0", "lora_sf": "SF12 / 125 kHz", "bit_rate": "250" },
+    { "data_rate": "1", "lora_sf": "SF11 / 125 kHz", "bit_rate": "440" },
+    { "data_rate": "2", "lora_sf": "SF10 / 125 kHz", "bit_rate": "980" },
+    { "data_rate": "3", "lora_sf": "SF9 / 125 kHz", "bit_rate": "1760" },
+    { "data_rate": "4", "lora_sf": "SF8 / 125 kHz", "bit_rate": "3125" },
+    { "data_rate": "5", "lora_sf": "SF7 / 125 kHz", "bit_rate": "5470" }
+  ],
+  "KR920": [
+    { "data_rate": "0", "lora_sf": "SF12 / 125 kHz", "bit_rate": "250" },
+    { "data_rate": "1", "lora_sf": "SF11 / 125 kHz", "bit_rate": "440" },
+    { "data_rate": "2", "lora_sf": "SF10 / 125 kHz", "bit_rate": "980" },
+    { "data_rate": "3", "lora_sf": "SF9 / 125 kHz", "bit_rate": "1760" },
+    { "data_rate": "4", "lora_sf": "SF8 / 125 kHz", "bit_rate": "3125" },
+    { "data_rate": "5", "lora_sf": "SF7 / 125 kHz", "bit_rate": "5470" }
+  ],
+  "US915": [
+    { "data_rate": "0", "lora_sf": "SF10 / 125 kHz", "bit_rate": "980" },
+    { "data_rate": "1", "lora_sf": "SF9 / 125 kHz", "bit_rate": "1760" },
+    { "data_rate": "2", "lora_sf": "SF8 / 125 kHz", "bit_rate": "3125" },
+    { "data_rate": "3", "lora_sf": "SF7 / 125 kHz", "bit_rate": "5470" },
+    { "data_rate": "4", "lora_sf": "SF8 / 500 kHz", "bit_rate": "12500" },
+    { "data_rate": "8", "lora_sf": "SF12 / 500 kHz", "bit_rate": "980" },
+    { "data_rate": "9", "lora_sf": "SF11 / 500 kHz", "bit_rate": "1760" },
+    { "data_rate": "10", "lora_sf": "SF10 / 500 kHz", "bit_rate": "3900" },
+    { "data_rate": "11", "lora_sf": "SF9 / 500 kHz", "bit_rate": "7000" },
+    { "data_rate": "12", "lora_sf": "SF8 / 500 kHz", "bit_rate": "12500" },
+    { "data_rate": "13", "lora_sf": "SF7 / 500 kHz", "bit_rate": "21900" }
+  ],
+  "AU915": [
+    { "data_rate": "0", "lora_sf": "SF12 / 125 kHz", "bit_rate": "250" },
+    { "data_rate": "1", "lora_sf": "SF11 / 125 kHz", "bit_rate": "440" },
+    { "data_rate": "2", "lora_sf": "SF10 / 125 kHz", "bit_rate": "980" },
+    { "data_rate": "3", "lora_sf": "SF9 / 125 kHz", "bit_rate": "1760" },
+    { "data_rate": "4", "lora_sf": "SF8 / 125 kHz", "bit_rate": "3125" },
+    { "data_rate": "5", "lora_sf": "SF7 / 125 kHz", "bit_rate": "5470" },
+    { "data_rate": "6", "lora_sf": "SF8 / 500 kHz", "bit_rate": "12500" },
+    { "data_rate": "8", "lora_sf": "SF12 / 500 kHz", "bit_rate": "980" },
+    { "data_rate": "9", "lora_sf": "SF11 / 500 kHz", "bit_rate": "1760" },
+    { "data_rate": "10", "lora_sf": "SF10 / 500 kHz", "bit_rate": "3900" },
+    { "data_rate": "11", "lora_sf": "SF9 / 500 kHz", "bit_rate": "7000" },
+    { "data_rate": "12", "lora_sf": "SF8 / 500 kHz", "bit_rate": "12500" }
+  ],
+  "IN865": [
+    { "data_rate": "0", "lora_sf": "SF12 / 125 kHz", "bit_rate": "250" },
+    { "data_rate": "1", "lora_sf": "SF11 / 125 kHz", "bit_rate": "440" },
+    { "data_rate": "2", "lora_sf": "SF10 / 125 kHz", "bit_rate": "980" },
+    { "data_rate": "3", "lora_sf": "SF9 / 125 kHz", "bit_rate": "1760" },
+    { "data_rate": "4", "lora_sf": "SF8 / 125 kHz", "bit_rate": "3125" },
+    { "data_rate": "5", "lora_sf": "SF7 / 125 kHz", "bit_rate": "5470" },
+    { "data_rate": "7", "lora_sf": "FSK: 50 kbps", "bit_rate": "50000" }
+  ]
+} 
