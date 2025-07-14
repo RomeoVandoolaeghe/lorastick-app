@@ -83,6 +83,33 @@
         }
       }
     },
+    "@shopify/react-native-skia": {
+      "root": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/@shopify/react-native-skia",
+      "name": "@shopify/react-native-skia",
+      "platforms": {
+        "ios": {
+          "podspecPath": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/@shopify/react-native-skia/react-native-skia.podspec",
+          "version": "2.1.1",
+          "configurations": [],
+          "scriptPhases": []
+        },
+        "android": {
+          "sourceDir": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/@shopify/react-native-skia/android",
+          "packageImportPath": "import com.shopify.reactnative.skia.RNSkiaPackage;",
+          "packageInstance": "new RNSkiaPackage()",
+          "buildTypes": [],
+          "libraryName": "rnskia",
+          "componentDescriptors": [
+            "SkiaPictureViewComponentDescriptor"
+          ],
+          "cmakeListsPath": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/@shopify/react-native-skia/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cxxModuleCMakeListsModuleName": null,
+          "cxxModuleCMakeListsPath": null,
+          "cxxModuleHeaderName": null,
+          "isPureCxxDependency": false
+        }
+      }
+    },
     "react-native-ble-plx": {
       "root": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/react-native-ble-plx",
       "name": "react-native-ble-plx",
@@ -148,6 +175,59 @@
           "buildTypes": [],
           "componentDescriptors": [],
           "cmakeListsPath": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/react-native-fs/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cxxModuleCMakeListsModuleName": null,
+          "cxxModuleCMakeListsPath": null,
+          "cxxModuleHeaderName": null,
+          "isPureCxxDependency": false
+        }
+      }
+    },
+    "react-native-gesture-handler": {
+      "root": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/react-native-gesture-handler",
+      "name": "react-native-gesture-handler",
+      "platforms": {
+        "ios": {
+          "podspecPath": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/react-native-gesture-handler/RNGestureHandler.podspec",
+          "version": "2.27.1",
+          "configurations": [],
+          "scriptPhases": []
+        },
+        "android": {
+          "sourceDir": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/react-native-gesture-handler/android",
+          "packageImportPath": "import com.swmansion.gesturehandler.RNGestureHandlerPackage;",
+          "packageInstance": "new RNGestureHandlerPackage()",
+          "buildTypes": [],
+          "libraryName": "rngesturehandler_codegen",
+          "componentDescriptors": [
+            "RNGestureHandlerButtonComponentDescriptor",
+            "RNGestureHandlerRootViewComponentDescriptor"
+          ],
+          "cmakeListsPath": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cxxModuleCMakeListsModuleName": null,
+          "cxxModuleCMakeListsPath": null,
+          "cxxModuleHeaderName": null,
+          "isPureCxxDependency": false
+        }
+      }
+    },
+    "react-native-reanimated": {
+      "root": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/react-native-reanimated",
+      "name": "react-native-reanimated",
+      "platforms": {
+        "ios": {
+          "podspecPath": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/react-native-reanimated/RNReanimated.podspec",
+          "version": "3.18.0",
+          "configurations": [],
+          "scriptPhases": []
+        },
+        "android": {
+          "sourceDir": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/react-native-reanimated/android",
+          "packageImportPath": "import com.swmansion.reanimated.ReanimatedPackage;",
+          "packageInstance": "new ReanimatedPackage()",
+          "buildTypes": [],
+          "libraryName": "rnreanimated",
+          "componentDescriptors": [],
+          "cmakeListsPath": "/Users/eszymko/Documents local/SoftDev/lorastick/node_modules/react-native-reanimated/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,

@@ -144,6 +144,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 2,
   },
+  // Chart legend styles for RSSI/SNR
+  chartLegend: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 4,
+    marginLeft: 8,
+  },
+  legendSwatchRssi: {
+    width: 18,
+    height: 8,
+    backgroundColor: '#007AFF', // RSSI bar color
+    borderRadius: 2,
+    marginRight: 4,
+  },
+  legendSwatchSnr: {
+    width: 18,
+    height: 4,
+    backgroundColor: '#FF9500', // SNR line color
+    borderRadius: 2,
+    marginRight: 4,
+  },
 });
 
 export default styles; 

@@ -184,11 +184,13 @@ export const runLinkCheck = async (
 ): Promise<() => void> => {
   if (getDemoModeValue()) {
     // Provide sample data for demo mode (hardcoded for EU868)
+    const randomRssi = Math.floor(Math.random() * 41) - 90; // -90 to -50
+    const randomSnr = Math.floor(Math.random() * 23) - 10; // -10 to +12
     const sampleResult = {
       time: new Date().toISOString(),
       gateways: 1,
-      rx_rssi: -60,
-      rx_snr: 10,
+      rx_rssi: randomRssi,
+      rx_snr: randomSnr,
       tx_demod_margin: 20, // sample value
       tx_power: txPower,
       tx_dr: dr,

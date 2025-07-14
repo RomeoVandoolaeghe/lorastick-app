@@ -7,6 +7,10 @@ import { Buffer } from 'buffer';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Slider from '@react-native-community/slider';
 import { Picker } from '@react-native-picker/picker';
+import { CartesianChart, Bar, Line, CartesianAxis } from 'victory-native';
+import { Dimensions } from 'react-native';
+import { useFont } from '@shopify/react-native-skia';
+import robotoMedium from '../../../android/app/src/main/assets/fonts/Roboto-Medium.ttf';
 
 
 // services 
@@ -44,6 +48,9 @@ const TestMainRealtime: React.FC<TestMainUnitProps> = ({ device }) => {
   const [isRunning, setIsRunning] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [showSending, setShowSending] = useState(false);
+  const font = useFont(robotoMedium, 12);
+  const [showRssi, setShowRssi] = useState(true);
+  const [showSnr, setShowSnr] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
@@ -192,14 +199,16 @@ const TestMainRealtime: React.FC<TestMainUnitProps> = ({ device }) => {
 
   return (
     <>
-         <TransSettingAccordion
-        powerList={powerList}
-        selectedPowerIdx={selectedPowerIdx}
-        setSelectedPowerIdx={setSelectedPowerIdx}
-        dataRateList={dataRateList}
-        selectedDR={selectedDR}
-        setSelectedDR={setSelectedDR}
-      />
+      {!isRunning && (
+        <TransSettingAccordion
+          powerList={powerList}
+          selectedPowerIdx={selectedPowerIdx}
+          setSelectedPowerIdx={setSelectedPowerIdx}
+          dataRateList={dataRateList}
+          selectedDR={selectedDR}
+          setSelectedDR={setSelectedDR}
+        />
+      )}
     <View style={styles.frequencyRow}>
         {frequencies.map(freq => (
           <TouchableOpacity
@@ -226,12 +235,13 @@ const TestMainRealtime: React.FC<TestMainUnitProps> = ({ device }) => {
       {/* Countdown Timer when running */}
       {isRunning && countdown > 0 && (
         <View style={{ alignItems: 'center', marginTop: 8 }}>
-          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#007AFF' }}>
-            Next Linkcheck in: {countdown}s
-          </Text>
-          {showSending && (
-            <Text style={{ fontSize: 16, color: '#FF9500', marginTop: 4 }}>
-              Sending LinkCheck command
+          {showSending ? (
+            <Text style={{ fontSize: 20, color: '#FF9500'}}>
+              Sending LinkCheck command...
+            </Text>
+          ) : (
+            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#007AFF' }}>
+              Next Linkcheck in: {countdown}s
             </Text>
           )}
         </View>
@@ -285,99 +295,125 @@ const TestMainRealtime: React.FC<TestMainUnitProps> = ({ device }) => {
               Min GW: {Math.min(...linkcheckResults.map(r => r.gateways))}
             </Text>
           </View> 
+          {/* RSSI and SNR Statistics Section */}
+          <View style={{
+            backgroundColor: '#f2f2f7',
+            borderRadius: 8,
+            padding: 10,
+            marginTop: 0,
+            marginBottom: 8,
+          }}>
+            {/* RSSI Stats */}
+            <Text style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 2 }}>
+              RSSI (dBm):
+              {'  '}Min: {linkcheckResults.length > 0 ? Math.min(...linkcheckResults.map(r => r.rx_rssi)) : '-'}
+              {'  '}Avg: {linkcheckResults.length > 0 ? (linkcheckResults.reduce((sum, r) => sum + r.rx_rssi, 0) / linkcheckResults.length).toFixed(1) : '-'}
+              {'  '}Max: {linkcheckResults.length > 0 ? Math.max(...linkcheckResults.map(r => r.rx_rssi)) : '-'}
+            </Text>
+            {/* RSSI Power Ratio */}
+            {linkcheckResults.length > 0 && (() => {
+              const min = Math.min(...linkcheckResults.map(r => r.rx_rssi));
+              const avg = linkcheckResults.reduce((sum, r) => sum + r.rx_rssi, 0) / linkcheckResults.length;
+              const max = Math.max(...linkcheckResults.map(r => r.rx_rssi));
+              // Power ratio: 10^((min-avg)/10), 10^((max-avg)/10)
+              const minRatio = Math.pow(10, (min - avg) / 10);
+              const maxRatio = Math.pow(10, (max - avg) / 10);
+              const minRatioDisplay = minRatio < 1 ? `1/${Math.floor(1 / minRatio)}` : `${minRatio.toFixed(3)}x`;
+              const maxRatioDisplay = maxRatio < 1 ? `1/${(1 / maxRatio).toFixed(2)}` : `${Math.floor(maxRatio)}x`;
+              return (
+                <Text style={{ fontSize: 13, color: '#555', marginBottom: 2 }}>
+                  Power ratio (Min/Avg): {minRatioDisplay}, (Max/Avg): {maxRatioDisplay}
+                </Text>
+              );
+            })()}
+            {/* SNR Stats */}
+            <Text style={{ fontSize: 14, fontWeight: 'bold' }}>
+              SNR (dB):
+              {'  '}Min: {linkcheckResults.length > 0 ? Math.min(...linkcheckResults.map(r => r.rx_snr)) : '-'}
+              {'  '}Avg: {linkcheckResults.length > 0 ? (linkcheckResults.reduce((sum, r) => sum + r.rx_snr, 0) / linkcheckResults.length).toFixed(1) : '-'}
+              {'  '}Max: {linkcheckResults.length > 0 ? Math.max(...linkcheckResults.map(r => r.rx_snr)) : '-'}
+            </Text>
+            {/* SNR Power Ratio */}
+            {linkcheckResults.length > 0 && (() => {
+              const min = Math.min(...linkcheckResults.map(r => r.rx_snr));
+              const avg = linkcheckResults.reduce((sum, r) => sum + r.rx_snr, 0) / linkcheckResults.length;
+              const max = Math.max(...linkcheckResults.map(r => r.rx_snr));
+              // Power ratio: 10^((min-avg)/10), 10^((max-avg)/10)
+              const minRatio = Math.pow(10, (min - avg) / 10);
+              const maxRatio = Math.pow(10, (max - avg) / 10);
+              const minRatioDisplay = minRatio < 1 ? `1/${Math.floor(1 / minRatio)}` : `${minRatio.toFixed(3)}x`;
+              const maxRatioDisplay = maxRatio < 1 ? `1/${(1 / maxRatio).toFixed(2)}` : `${Math.floor(maxRatio)}x`;
+              return (
+                <Text style={{ fontSize: 13, color: '#555' }}>
+                  Power ratio (Min/Avg): {minRatioDisplay}, (Max/Avg): {maxRatioDisplay}
+                </Text>
+              );
+            })()}
+          </View>
         </>
       )}
 
       {linkcheckResults.length > 0 && (
-        <ScrollView style={{ marginTop: 20 }} contentContainerStyle={{ flexGrow: 1 }}>
-          {(() => {
-            // Calculate best SNR and RSSI once for all results
-            const bestSNR = Math.max(...linkcheckResults.map(r => r.rx_snr));
-            const bestRSSI = Math.max(...linkcheckResults.map(r => r.rx_rssi));
-            return linkcheckResults.map((res, idx) => (
-              <View key={idx} style={{
-                marginBottom: 16,
-                borderWidth: 1,
-                borderColor: '#eee',
-                borderRadius: 8,
-                padding: 10,
-                backgroundColor: res.lost_packets > 0 ? '#ffeaea' : '#fafbfc',
-                position: 'relative',
-              }}>
-                {/* Header Row: Badge, Time, DR */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                  {/* Badge for Test number */}
-                  <View style={{
-                    backgroundColor: '#007AFF',
-                    borderRadius: 16,
-                    minWidth: 36,
-                    height: 32,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    paddingHorizontal: 10,
-                    marginRight: 12,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.2,
-                    shadowRadius: 1.41,
-                    elevation: 2,
-                  }}>
-                    <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>{linkcheckResults.length - idx}</Text>
-                  </View>
-                  {/* Timestamp */}
-                  <Text style={{ fontWeight: 'bold', fontSize: 18, marginRight: 12 }}>{res.time.slice(11, 19)}</Text>
-                  
-                  {/* DR only */}
-                  <Text style={{ fontSize: 18 }}>
-                    DR <Text style={{ fontWeight: 'bold' }}>{res.tx_dr}</Text> | TXPower <Text style={{ fontWeight: 'bold' }}>{res.tx_power}</Text>
-                  </Text>
-                </View>
-                {/* Main Row: Four columns */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  {/* 1. SNR and RSSI */}
-                  <View style={{ flex: 1, alignItems: 'flex-start' }}>
-                    <Text style={{ fontSize: 18, marginBottom: 2 }}>
-                      SNR <Text style={{ fontWeight: 'bold' }}>{res.rx_snr > 0 ? `+${res.rx_snr}` : res.rx_snr}</Text>dB
-                    </Text>
-                    <Text style={{ fontSize: 18 }}>RSSI <Text style={{ fontWeight: 'bold' }}>{res.rx_rssi}</Text></Text>
-                  </View>
-                  {/* 2. Sensor icon (narrower) */}
-                  <View style={{ flex: 0.5, alignItems: 'flex-start', justifyContent: 'center' }}>
-                    <MaterialIcons name="sensors" size={36} color="#222" />
-                  </View>
-                  {/* 3. Gateway icon with badge (narrower) */}
-                  <View style={{ flex: 0.5, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}>
-                    <Router size={32} color="#222" />
-                    <View style={{
-                      backgroundColor: '#007AFF',
-                      borderRadius: 12,
-                      minWidth: 28,
-                      height: 24,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      paddingHorizontal: 8,
-                      marginLeft: -10,
-                      marginRight: 0,
-                      zIndex: 1,
-                    }}>
-                      <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 15 }}>{res.gateways}</Text>
-                    </View>
-                  </View>
-                  {/* 4. Best SNR and RSSI */}
-                  <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                    <Text style={{ fontSize: 18, marginBottom: 2 }}>
-                      SNR <Text style={{ fontWeight: 'bold' }}>{bestSNR > 0 ? `+${bestSNR}` : bestSNR}</Text>dB
-                    </Text>
-                    <Text style={{ fontSize: 18 }}>RSSI <Text style={{ fontWeight: 'bold' }}>{bestRSSI}</Text></Text>
-                  </View>
-                </View>
-              </View>
-            ));
-          })()}
-        </ScrollView>
+        <>
+          {/* Legend for chart */}
+          <View style={styles.chartLegend}>
+            <TouchableOpacity
+              style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12, opacity: showRssi ? 1 : 0.4 }}
+              onPress={() => setShowRssi(v => !v)}
+            >
+              <View style={styles.legendSwatchRssi} />
+              <Text style={{ fontSize: 13, color: '#222', marginRight: 8 }}>RSSI in dBM</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{ flexDirection: 'row', alignItems: 'center', opacity: showSnr ? 1 : 0.4 }}
+              onPress={() => setShowSnr(v => !v)}
+            >
+              <View style={styles.legendSwatchSnr} />
+              <Text style={{ fontSize: 13, color: '#222' }}>SNR in dB</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={{ marginTop: 4, width: Dimensions.get('window').width -16, height: 400 }}>
+            <CartesianChart
+              data={linkcheckResults.map((r, i) => ({ x: i + 1, rx_rssi: r.rx_rssi, rx_snr: r.rx_snr }))}
+              xKey="x"
+              yKeys={["rx_rssi", "rx_snr"]}
+              padding={10}
+              domain={{ y: undefined }}
+              yAxis={[
+                {
+                  yKeys: ['rx_rssi'],
+                  tickCount: 6,
+                  formatYLabel: (value: number) => `${value}`,
+                  font,
+                  axisSide: 'left',
+                },
+                {
+                  yKeys: ['rx_snr'],
+                  tickValues: [-9, -6, -3, 0, 3, 6, 9],
+                  formatYLabel: (value: number) => `${value}`,
+                  font,
+                  axisSide: 'right',
+                  labelColor: '#FF9500',
+                  lineColor: '#FF9500',
+                }
+              ]}
+            >
+              {({ points, chartBounds }) => (
+                <>
+                  {showRssi && (
+                    <Bar points={points.rx_rssi} chartBounds={chartBounds} color="#007AFF" roundedCorners={{ topLeft: 6, topRight: 6 }} />
+                  )}
+                  {showSnr && (
+                    <Line points={points.rx_snr} color="#FF9500" strokeWidth={2} />
+                  )}
+                </>
+              )}
+            </CartesianChart>
+          </View>
+        </>
       )}
     </>
   );
 };
 
-export default TestMainRealtime; 
+export default TestMainRealtime;
