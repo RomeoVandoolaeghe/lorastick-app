@@ -268,7 +268,7 @@ export const runLinkCheck = async (
   await device.writeCharacteristicWithoutResponseForService(
     writeChar.serviceUUID,
     writeChar.uuid,
-    Buffer.from(`RUN linkcheck ${txPower} ${dr}\n`, 'utf-8').toString('base64')
+    Buffer.from(`RUN LinkCheck ${txPower} ${dr}\n`, 'utf-8').toString('base64')
   );
 
   // Return cleanup function

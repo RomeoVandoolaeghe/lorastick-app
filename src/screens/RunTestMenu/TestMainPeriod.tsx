@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Alert } from 'react-native';
 
 interface TestMainPeriodProps {
   selectedPeriod: string;
@@ -22,6 +22,15 @@ const TestMainPeriod: React.FC<TestMainPeriodProps> = ({
   handleRun,
   styles,
 }) => {
+  const totalTests = Math.floor(
+    periodSeconds[selectedPeriod] / frequencySeconds[selectedFrequency]
+  );
+
+  const handlePressRun = () => {
+    Alert.alert('Info', `Mode périodique : ${totalTests} tests seront exécutés.`);
+    handleRun(); // appel de la fonction d'origine
+  };
+
   return (
     <>
       <View style={styles.periodRow}>
@@ -47,12 +56,12 @@ const TestMainPeriod: React.FC<TestMainPeriodProps> = ({
       </View>
 
       <Text style={styles.testCountText}>
-        Total tests: {Math.floor(periodSeconds[selectedPeriod] / frequencySeconds[selectedFrequency])}
+        Total tests: {totalTests}
       </Text>
 
       <TouchableOpacity
         style={styles.runButton}
-        onPress={handleRun}
+        onPress={handlePressRun}
       >
         <Text style={styles.runButtonText}>Run</Text>
       </TouchableOpacity>
@@ -60,4 +69,4 @@ const TestMainPeriod: React.FC<TestMainPeriodProps> = ({
   );
 };
 
-export default TestMainPeriod; 
+export default TestMainPeriod;

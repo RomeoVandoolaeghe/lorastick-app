@@ -1,6 +1,7 @@
 #include "Arduino.h"
 
-struct LinkCheckData {
+struct LinkCheckData
+{
   String time;
   int mode;
   int gateways;
@@ -17,7 +18,8 @@ String incoming = "";
 //--------------------------------
 // Setup serial and BLE
 //--------------------------------
-void setup() {
+void setup()
+{
   Serial.begin(115200);
 
   delay(1000);
@@ -35,7 +37,8 @@ void setup() {
 //--------------------------------
 
 /////////////handleGenlinkCheck()////////////////////////////
-void handleGenlinkCheck() {
+void handleGenlinkCheck()
+{
   Serial.println("BLE cmd: GenLinkCheck, generate 100 LinkChecks sample and send to app");
 
   // Envoi d'un seul LinkCheck
@@ -60,14 +63,16 @@ void handleGenlinkCheck() {
 }
 
 ////////////////handleGetFile()////////////////////////////////
-void handleGetFile() {
+void handleGetFile()
+{
   Serial.println("Commande reçue : envoi du fichier simulé");
 
-  for (int i = 0; i < 100; i++) {
+  for (int i = 0; i < 100; i++)
+  {
     String line = String(random(1, 5)) + "," + String(14.0 + random(0, 1000000) / 1000000.0, 6) + "," + String(121.0 + random(0, 1000000) / 1000000.0, 6) + "," + String(-1 * random(70, 120)) + "," + String(random(0, 10)) + "," + String(random(0, 32)) + "," + String(random(0, 10)) + "," + String(random(0, 3)) + "\n";
 
     api.ble.uart.write((uint8_t *)line.c_str(), line.length());
-    delay(10);  // Ajustable
+    delay(10); // Ajustable
   }
 
   // Marque la fin du fichier
@@ -78,14 +83,16 @@ void handleGetFile() {
 }
 
 /////////////handleLinkCheckWithPower and data rate()////////////////////////////
-void handleLinkCheckWithPower(int txPower, int dataRate) {
+void handleLinkCheckWithPower(int txPower, int dataRate)
+{
   Serial.print("BLE cmd: LinkCheck with TXPower ");
   Serial.print(txPower);
   Serial.print(", DataRate ");
   Serial.println(dataRate);
 
   // Set TX Power
-  if (!api.lorawan.txp.set(txPower)) {
+  if (!api.lorawan.txp.set(txPower))
+  {
     Serial.println("Failed to set TX Power");
     String err = "+LINKCHECK: ERROR SETTING TXPOWER\n";
     api.ble.uart.write((uint8_t *)err.c_str(), err.length());
@@ -93,7 +100,8 @@ void handleLinkCheckWithPower(int txPower, int dataRate) {
   }
 
   // Set Data Rate
-  if (!api.lorawan.dr.set(dataRate)) {
+  if (!api.lorawan.dr.set(dataRate))
+  {
     Serial.println("Failed to set Data Rate");
     String err = "+LINKCHECK: ERROR SETTING DATARATE\n";
     api.ble.uart.write((uint8_t *)err.c_str(), err.length());
@@ -101,7 +109,8 @@ void handleLinkCheckWithPower(int txPower, int dataRate) {
   }
 
   // Set LinkCheck mode to once
-  if (!api.lorawan.linkcheck.set(1)) {
+  if (!api.lorawan.linkcheck.set(1))
+  {
     Serial.println("Failed to set LinkCheck mode");
     String err = "+LINKCHECK: ERROR SETTING LINKCHECK\n";
     api.ble.uart.write((uint8_t *)err.c_str(), err.length());
@@ -115,27 +124,33 @@ void handleLinkCheckWithPower(int txPower, int dataRate) {
   //   String err = "+LINKCHECK: ERROR SENDING UPLINK\n";
   //   api.ble.uart.write((uint8_t *)err.c_str(), err.length());
   //   return;
-  }
+  // }
 
   // Wait for LinkCheck event (poll for a short period)
   unsigned long start = millis();
   const unsigned long timeout = 8000; // 8 seconds max
   bool gotLinkCheck = false;
-  while (millis() - start < timeout) {
+  while (millis() - start < timeout)
+  {
     // Check for LinkCheck event
-    if (Serial.available()) {
+    if (Serial.available())
+    {
       String evt = Serial.readStringUntil('\n');
       evt.trim();
-      if (evt.startsWith("+EVT:LINKCHECK:")) {
+      if (evt.startsWith("+EVT:LINKCHECK:"))
+      {
         // Format: +EVT:LINKCHECK:Y0,Y1,Y2,Y3,Y4
         int y0, y1, y2, y3, y4;
         int parsed = sscanf(evt.c_str(), "+EVT:LINKCHECK:%d,%d,%d,%d,%d", &y0, &y1, &y2, &y3, &y4);
-        if (parsed == 5 && y0 == 0) {
+        if (parsed == 5 && y0 == 0)
+        {
           // Success
           String payload = "+LINKCHECK: " + String(y2) + "," + String(y3) + "," + String(y4) + "," + String(y1) + ",TXP=" + String(txPower) + ",DR=" + String(dataRate) + "\n";
           api.ble.uart.write((uint8_t *)payload.c_str(), payload.length());
           Serial.println("✅ Real LinkCheck sent");
-        } else {
+        }
+        else
+        {
           String err = "+LINKCHECK: ERROR LINKCHECK FAIL\n";
           api.ble.uart.write((uint8_t *)err.c_str(), err.length());
         }
@@ -145,7 +160,8 @@ void handleLinkCheckWithPower(int txPower, int dataRate) {
     }
     delay(50);
   }
-  if (!gotLinkCheck) {
+  if (!gotLinkCheck)
+  {
     String err = "+LINKCHECK: TIMEOUT\n";
     api.ble.uart.write((uint8_t *)err.c_str(), err.length());
     Serial.println("❌ LinkCheck timeout");
@@ -153,15 +169,19 @@ void handleLinkCheckWithPower(int txPower, int dataRate) {
 }
 
 ///////JoinStatus()///////////////////
-void JoinStatus() {
+void JoinStatus()
+{
   Serial.println("BLE cmd: JoinStatus");
 
-  bool isJoined = api.lorawan.njs.get();  // vérifie le statut réseau
+  bool isJoined = api.lorawan.njs.get(); // vérifie le statut réseau
 
   String msg;
-  if (isJoined) {
+  if (isJoined)
+  {
     msg = "+STATUS:JOINED\n";
-  } else {
+  }
+  else
+  {
     msg = "+STATUS:NOT_JOINED\n";
   }
 
@@ -169,7 +189,8 @@ void JoinStatus() {
 }
 
 ///////////GetStatus()///////////////////////////
-void GetStatus() {
+void GetStatus()
+{
   Serial.println("BLE cmd: GetStatus");
 
   String msg = "";
@@ -178,15 +199,19 @@ void GetStatus() {
   {
     uint8_t buf[8];
     uint8_t len = sizeof(buf);
-    if (api.lorawan.deui.get(buf, len)) {
+    if (api.lorawan.deui.get(buf, len))
+    {
       msg += "DevEUI: ";
-      for (int i = 0; i < len; i++) {
+      for (int i = 0; i < len; i++)
+      {
         if (buf[i] < 16)
           msg += "0";
         msg += String(buf[i], HEX);
       }
       msg += "\n";
-    } else {
+    }
+    else
+    {
       msg += "Erreur DevEUI\n";
     }
   }
@@ -195,15 +220,19 @@ void GetStatus() {
   {
     uint8_t buf[8];
     uint8_t len = sizeof(buf);
-    if (api.lorawan.appeui.get(buf, len)) {
+    if (api.lorawan.appeui.get(buf, len))
+    {
       msg += "AppEUI: ";
-      for (int i = 0; i < len; i++) {
+      for (int i = 0; i < len; i++)
+      {
         if (buf[i] < 16)
           msg += "0";
         msg += String(buf[i], HEX);
       }
       msg += "\n";
-    } else {
+    }
+    else
+    {
       msg += "Erreur AppEUI\n";
     }
   }
@@ -212,15 +241,19 @@ void GetStatus() {
   {
     uint8_t buf[16];
     uint8_t len = sizeof(buf);
-    if (api.lorawan.appkey.get(buf, len)) {
+    if (api.lorawan.appkey.get(buf, len))
+    {
       msg += "AppKey: ";
-      for (int i = 0; i < len; i++) {
+      for (int i = 0; i < len; i++)
+      {
         if (buf[i] < 16)
           msg += "0";
         msg += String(buf[i], HEX);
       }
       msg += "\n";
-    } else {
+    }
+    else
+    {
       msg += "Erreur AppKey\n";
     }
   }
@@ -239,8 +272,46 @@ void GetStatus() {
 
   // === Region
   int region = api.lorawan.band.get();
+  String regionStr = "";
+
+  switch (region)
+  {
+  case 0:
+    regionStr = "AS923";
+    break;
+  case 1:
+    regionStr = "AU915";
+    break;
+  case 2:
+    regionStr = "CN470";
+    break;
+  case 3:
+    regionStr = "CN779";
+    break;
+  case 4:
+    regionStr = "EU433";
+    break;
+  case 5:
+    regionStr = "EU868";
+    break;
+  case 6:
+    regionStr = "KR920";
+    break;
+  case 7:
+    regionStr = "IN865";
+    break;
+  case 8:
+    regionStr = "US915";
+    break;
+  case 9:
+    regionStr = "RU864";
+    break;
+  default:
+    regionStr = "UNKNOWN";
+  }
+
   msg += "Region: ";
-  msg += String(region);
+  msg += regionStr;
   msg += "\n";
 
   // === Envoi BLE + affichage console
@@ -249,30 +320,37 @@ void GetStatus() {
 }
 
 ///////////// JoinRequest() command///////////////
-void JoinRequest() {
+void JoinRequest()
+{
   Serial.println("Tentative de join LoRaWAN (OTAA)...");
 
   // Vérification si le join est déjà effectué
-  if (api.lorawan.njs.get()) {
+  if (api.lorawan.njs.get())
+  {
     Serial.println("Déjà connecté au réseau LoRaWAN.");
     api.ble.uart.write((uint8_t *)"Already Joined\n");
   }
 
   // sinon on join
-  else {
+  else
+  {
     Serial.println("Envoi de la requête de join...");
     // wait for Join success
     unsigned long startTime = millis();
-    const unsigned long timeout = 20000;  // 20 secondes pour le join sinon echec
+    const unsigned long timeout = 20000; // 20 secondes pour le join sinon echec
 
-    while (api.lorawan.njs.get() == 0 && (millis() - startTime < timeout)) {
-      api.lorawan.join();  // Envoi de la requête de join
+    while (api.lorawan.njs.get() == 0 && (millis() - startTime < timeout))
+    {
+      api.lorawan.join(); // Envoi de la requête de join
       delay(5000);
     }
-    if (api.lorawan.njs.get()) {
+    if (api.lorawan.njs.get())
+    {
       Serial.println("Join réussi !");
       api.ble.uart.write((uint8_t *)"Join Success\n", 14);
-    } else {
+    }
+    else
+    {
       Serial.println("Échec du join.");
       api.ble.uart.write((uint8_t *)"Join Failed\n", 13);
     }
@@ -280,18 +358,19 @@ void JoinRequest() {
 }
 
 /////////////GetMode() command///////////////
-void GetMode() {
+void GetMode()
+{
   api.lorawan.nwm.set();
   Serial.println("BLE cmd: GetMode");
   int mode = api.lora.nwm.get();
   Serial.println(mode);
-  String response = "MODE=" + String(mode);  // ex: "MODE=1"
+  String response = "MODE=" + String(mode); // ex: "MODE=1"
   api.ble.uart.write((uint8_t *)response.c_str(), response.length());
 }
 
-
 /////////////////GetP2P() command///////////////
-void GetP2P() {
+void GetP2P()
+{
   uint32_t frequency = api.lora.pfreq.get();
   uint32_t spreadingFactor = api.lora.psf.get();
   uint32_t bandwidth = api.lora.pbw.get();
@@ -318,50 +397,74 @@ void GetP2P() {
 //--------------------------------
 // Main loop
 //--------------------------------
-void loop() {
+void loop()
+{
   // Lecture des commandes BLE
-  while (api.ble.uart.available()) {
+  while (api.ble.uart.available())
+  {
     char c = api.ble.uart.read();
 
-    if (c == '\n') {
-      incoming.trim();  // Nettoie les \r et espaces
+    if (c == '\n')
+    {
+      incoming.trim(); // Nettoie les \r et espaces
 
-      if (incoming == "RUN Genlinkcheck") {
+      if (incoming == "RUN Genlinkcheck")
+      {
         handleGenlinkCheck();
-      } else if (incoming == "RUN Getfile") {
+      }
+      else if (incoming == "RUN Getfile")
+      {
         handleGetFile();
-      } else if (incoming == "RUN GetStatus") {
+      }
+      else if (incoming == "RUN GetStatus")
+      {
         GetStatus();
-      } else if (incoming == "RUN JoinStatus") {
+      }
+      else if (incoming == "RUN JoinStatus")
+      {
         JoinStatus();
-      } else if (incoming == "RUN JoinRequest") {
+      }
+      else if (incoming == "RUN JoinRequest")
+      {
         JoinRequest();
-      } else if (incoming == "RUN SetLoRaWANMode") {
+      }
+      else if (incoming == "RUN SetLoRaWANMode")
+      {
         GetMode();
-      } else if (incoming == "RUN GetP2P"){
+      }
+      else if (incoming == "RUN GetP2P")
+      {
         GetP2P();
-      } else if (incoming.startsWith("RUN LinkCheck ")) {
+      }
+      else if (incoming.startsWith("RUN LinkCheck "))
+      {
         // Parse TXPower and DataRate arguments
         int firstSpace = incoming.indexOf(' ', 14);
         int txPower = 0;
         int dataRate = 0;
-        if (firstSpace > 0) {
+        if (firstSpace > 0)
+        {
           String txStr = incoming.substring(14, firstSpace);
           String drStr = incoming.substring(firstSpace + 1);
           txPower = txStr.toInt();
           dataRate = drStr.toInt();
-        } else {
+        }
+        else
+        {
           txPower = incoming.substring(14).toInt();
           dataRate = 0; // default if not provided
         }
         handleLinkCheckWithPower(txPower, dataRate);
       }
-      else {
+      else
+      {
         Serial.println("Commande inconnue : " + incoming);
       }
 
-      incoming = "";  // Réinitialisation
-    } else {
+      incoming = ""; // Réinitialisation
+    }
+    else
+    {
       incoming += c;
     }
   }

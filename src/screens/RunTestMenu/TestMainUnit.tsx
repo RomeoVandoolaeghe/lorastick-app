@@ -7,6 +7,8 @@ import { Buffer } from 'buffer';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Slider from '@react-native-community/slider';
 import { Picker } from '@react-native-picker/picker';
+import { GetDataRateList } from '../../services/lorawanspec.ts';
+
 
 
 // services 
@@ -34,6 +36,8 @@ const TestMainUnit: React.FC<TestMainUnitProps> = ({ device }) => {
   const [region, setRegion] = useState<string>('');
   const [accordionOpen, setAccordionOpen] = useState(false);
 
+
+  
   useEffect(() => {
     let isMounted = true;
     const fetchRegionAndPower = async () => {
@@ -101,7 +105,11 @@ const TestMainUnit: React.FC<TestMainUnitProps> = ({ device }) => {
         Alert.alert('Erreur', 'Paramètres de transmission invalides');
         return;
       }
-      const cleanup = await runLinkCheck(device, txPower, dr, (newResult) => {
+      if (!device) {
+        Alert.alert('Erreur', 'Aucun appareil sélectionné');
+        return;
+      }
+      const cleanup = await runLinkCheck(device as Device, txPower, dr, (newResult) => {
         setLinkcheckResults(prev => [newResult, ...prev]);
         console.log(newResult);
       });
@@ -130,7 +138,13 @@ const TestMainUnit: React.FC<TestMainUnitProps> = ({ device }) => {
         dataRateList={dataRateList}
         selectedDR={selectedDR}
         setSelectedDR={setSelectedDR}
+        loading={false}
       />
+
+
+
+
+
       {/* Run Button */}
       <TouchableOpacity style={styles.runButton} onPress={runButtonHandle}>
         <Text style={styles.runButtonText}>Run</Text>
@@ -210,7 +224,7 @@ const TestMainUnit: React.FC<TestMainUnitProps> = ({ device }) => {
                   </View>
                   {/* Timestamp */}
                   <Text style={{ fontWeight: 'bold', fontSize: 18, marginRight: 12 }}>{res.time.slice(11, 19)}</Text>
-                  
+
                   {/* DR only */}
                   <Text style={{ fontSize: 18 }}>
                     DR <Text style={{ fontWeight: 'bold' }}>{res.tx_dr}</Text> | TXPower <Text style={{ fontWeight: 'bold' }}>{res.tx_power}</Text>

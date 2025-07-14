@@ -207,9 +207,10 @@ const TestMainRealtime: React.FC<TestMainUnitProps> = ({ device }) => {
           dataRateList={dataRateList}
           selectedDR={selectedDR}
           setSelectedDR={setSelectedDR}
+          loading={false}
         />
       )}
-    <View style={styles.frequencyRow}>
+      <View style={styles.frequencyRow}>
         {frequencies.map(freq => (
           <TouchableOpacity
             key={freq.key}
@@ -230,13 +231,13 @@ const TestMainRealtime: React.FC<TestMainUnitProps> = ({ device }) => {
           </TouchableOpacity>
         ))}
       </View>
- 
-     
+
+
       {/* Countdown Timer when running */}
       {isRunning && countdown > 0 && (
         <View style={{ alignItems: 'center', marginTop: 8 }}>
           {showSending ? (
-            <Text style={{ fontSize: 20, color: '#FF9500'}}>
+            <Text style={{ fontSize: 20, color: '#FF9500' }}>
               Sending LinkCheck command...
             </Text>
           ) : (
@@ -294,7 +295,7 @@ const TestMainRealtime: React.FC<TestMainUnitProps> = ({ device }) => {
             <Text style={{ fontSize: 14, fontWeight: 'bold' }}>
               Min GW: {Math.min(...linkcheckResults.map(r => r.gateways))}
             </Text>
-          </View> 
+          </View>
           {/* RSSI and SNR Statistics Section */}
           <View style={{
             backgroundColor: '#f2f2f7',
@@ -372,7 +373,7 @@ const TestMainRealtime: React.FC<TestMainUnitProps> = ({ device }) => {
               <Text style={{ fontSize: 13, color: '#222' }}>SNR in dB</Text>
             </TouchableOpacity>
           </View>
-          <View style={{ marginTop: 4, width: Dimensions.get('window').width -16, height: 400 }}>
+          <View style={{ marginTop: 4, width: Dimensions.get('window').width - 16, height: 400 }}>
             <CartesianChart
               data={linkcheckResults.map((r, i) => ({ x: i + 1, rx_rssi: r.rx_rssi, rx_snr: r.rx_snr }))}
               xKey="x"

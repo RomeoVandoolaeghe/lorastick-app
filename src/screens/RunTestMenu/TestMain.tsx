@@ -55,11 +55,12 @@ type TestMode = 'unit' | 'periodic' | 'realtime' | null;
 
 //----------------------------------------------------------------------
 const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) => {
-  
+
   // États pour gérer la sélection de méthode, mode de test, période, fréquence et résultats
   const [selectedMethod, setSelectedMethod] = useState<TestMethod | null>(null);
   const [testMode, setTestMode] = useState<TestMode>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<Period>('1h');
+  const [selectedFrequency, setSelectedFrequency] = useState<keyof typeof frequencySeconds>('10s');
   const [linkcheckResults, setLinkcheckResults] = useState<LinkCheckRecord[]>([]);
   const [isRealtimeRunning, setIsRealtimeRunning] = useState(false);
   const realtimeSubscriptionRef = useRef<ReturnType<Device['monitorCharacteristicForService']> | null>(null);
@@ -113,7 +114,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
       clearInterval(realtimeIntervalRef.current);
     }
 
-    const intervalMs = frequencySeconds[selectedFrequency] * 1000;
+
 
     const services = await device.services();
     const allChars = await Promise.all(
@@ -141,7 +142,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
         const decoded = Buffer.from(characteristic.value, 'base64').toString('utf-8');
         if (decoded.startsWith('+LINKCHECK:')) {
           const clean = decoded.trim().replace('+LINKCHECK: ', '');
-          const [gateways, latitude, longitude, rx_rssi, rx_snr, tx_demod_margin, tx_dr, lost_packets] = clean.split(',').map(Number);
+          const [gateways, latitude, longitude, rx_rssi, rx_snr, tx_demod_margin, tx_dr, tx_power, lost_packets] = clean.split(',').map(Number);
 
           const newResult: LinkCheckRecord = {
             time: new Date().toISOString(), // ou récupérée du device si fournie
@@ -153,6 +154,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
             rx_snr,
             tx_demod_margin,
             tx_dr,
+            tx_power,
             lost_packets,
           };
 
@@ -176,9 +178,11 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
       }
     };
 
-    await sendLinkCheck();
-    realtimeIntervalRef.current = setInterval(sendLinkCheck, intervalMs);
-    setIsRealtimeRunning(true);
+    // await sendLinkCheck();
+    // // Use selectedFrequency to determine interval in ms, default to 10s if not set
+    // const intervalMs = frequencySeconds[selectedFrequency] ? frequencySeconds[selectedFrequency] * 1000 : 10000;
+    // realtimeIntervalRef.current = setInterval(sendLinkCheck, intervalMs);
+    // setIsRealtimeRunning(true);
   };
 
 
@@ -205,10 +209,7 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
     if (testMode === 'realtime') {
       isRealtimeRunning ? stopRealtimeMode() : startRealtimeMode();
     } else if (testMode === 'periodic') {
-      const total = Math.floor(
-        periodSeconds[selectedPeriod] / frequencySeconds[selectedFrequency]
-      );
-      Alert.alert('Info', `Mode périodique : ${total} tests seront exécutés.`);
+
     }
   };
 
