@@ -363,16 +363,34 @@ const TestMain: React.FC<TestMainProps> = ({ selected, onTabChange, device }) =>
       )}
 
       {selectedMethod && !testMode && (
-        <View style={styles.verticalButtonGroup}>
-          {['unit', 'realtime', 'periodic'].map(mode => (
+        <View style={{ flexDirection: 'column', alignItems: 'stretch', marginVertical: 24, gap: 16 }}>
+          {[{
+            mode: 'unit',
+            icon: 'flash-on',
+            title: 'Unit',
+            desc: 'Quickly assess radio signal quality and connectivity in a single test.'
+          }, {
+            mode: 'realtime',
+            icon: 'autorenew',
+            title: 'Realtime',
+            desc: 'Continuously monitor radio link quality in real time.'
+          }, {
+            mode: 'periodic',
+            icon: 'search',
+            title: 'Probe',
+            desc: 'Schedule repeated tests over a set period for trend analysis.'
+          }].map(({ mode, icon, title, desc }) => (
             <TouchableOpacity
               key={mode}
-              style={styles.verticalButton}
+              style={[styles.modeZone, { opacity: 1, marginBottom: 0, flexDirection: 'row', alignItems: 'center' }]}
               onPress={() => setTestMode(mode as TestMode)}
+              activeOpacity={0.8}
             >
-              <Text style={styles.verticalButtonText}>
-                {mode.charAt(0).toUpperCase() + mode.slice(1)}
-              </Text>
+              <MaterialIcons name={icon} size={36} color="#007AFF" style={{ marginRight: 16 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.modeZoneTitle}>{title}</Text>
+                <Text style={styles.modeZoneDesc}>{desc}</Text>
+              </View>
             </TouchableOpacity>
           ))}
         </View>

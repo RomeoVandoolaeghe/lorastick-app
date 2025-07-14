@@ -166,6 +166,35 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     marginRight: 4,
   },
+  modeZone: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingTop: 14,
+    paddingBottom: 14,
+    paddingLeft: 16,
+    paddingRight: 16,
+    marginHorizontal: 6,
+    alignItems: 'center',
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    minHeight: 140,
+    justifyContent: 'flex-start',
+  },
+  modeZoneTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#222',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  modeZoneDesc: {
+    fontSize: 17,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 2,
+  },
 });
 
 export default styles; 
